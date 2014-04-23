@@ -83,6 +83,9 @@ module Sensu
 
       def unsubscribe(&callback)
         @queues.values.each do |queue|
+          queue.before_recovery do
+            queue.unsubscribe
+          end
           queue.unsubscribe
         end
         @queues = {}
