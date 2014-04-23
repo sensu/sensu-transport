@@ -18,9 +18,9 @@ module Sensu
           @on_error.call(error)
         end
         @connection = AMQP.connect(options, {
-                                     :on_tcp_connection_failure => on_failure,
-                                     :on_possible_authentication_failure => on_failure
-                                   })
+          :on_tcp_connection_failure => on_failure,
+          :on_possible_authentication_failure => on_failure
+        })
         @connection.logger = @logger
         @connection.on_open do
           timeout.cancel
@@ -71,7 +71,7 @@ module Sensu
         end
       end
 
-      def subscribe(exchange_type, exchange_name, queue_name='', options={}, &callback)
+      def subscribe(exchange_type, exchange_name, queue_name="", options={}, &callback)
         previously_declared = @queues.has_key?(queue_name)
         @queues[queue_name] ||= @channel.queue!(queue_name, :auto_delete => true)
         queue = @queues[queue_name]
@@ -94,6 +94,17 @@ module Sensu
         @queues = {}
         @channel.recover if connected?
         super
+      end
+
+      def stats(queue_name, options={}, &callback)
+        options = options.merge(:auto_delete => true)
+        @channel.queue(queue_name, options).status do |messages, consumers|
+          info = {
+            :messages => messages,
+            :consumers => consumers
+          }
+          callback.call(info)
+        end
       end
     end
   end

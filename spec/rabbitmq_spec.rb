@@ -38,7 +38,7 @@ describe "Sensu::Transport::RabbitMQ" do
   it "can unsubscribe from queues and close the connection" do
     async_wrapper do
       @transport.connect
-      @transport.subscribe("direct", "bar") do |message|
+      @transport.subscribe("direct", "bar") do |info, message|
         true
       end
       timer(1) do
@@ -46,6 +46,18 @@ describe "Sensu::Transport::RabbitMQ" do
           @transport.close
           async_done
         end
+      end
+    end
+  end
+
+  it "can get queue stats, message and consumer counts" do
+    async_wrapper do
+      @transport.connect
+      @transport.stats("bar") do |info|
+        info.should be_kind_of(Hash)
+        info[:messages].should eq(0)
+        info[:consumers].should eq(0)
+        async_done
       end
     end
   end
