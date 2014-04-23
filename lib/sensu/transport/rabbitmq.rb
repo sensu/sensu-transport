@@ -10,18 +10,18 @@ module Sensu
     class RabbitMQ < Base
       def connect(options={})
         timeout = EM::Timer.new(20) do
-          error = Error.new("timed out while attempting to connect")
+          error = Error.new("timed out while attempting to connect to rabbitmq")
           @on_error.call(error)
         end
         on_failure = Proc.new do
-          error = Error.new("failed to connect")
+          error = Error.new("failed to connect to rabbitmq")
           @on_error.call(error)
         end
         @connection = AMQP.connect(options, {
           :on_tcp_connection_failure => on_failure,
           :on_possible_authentication_failure => on_failure
         })
-        @connection.logger = Logger.get
+        @connection.logger = @logger
         @connection.on_open do
           timeout.cancel
         end
@@ -65,24 +65,27 @@ module Sensu
             info = {}
             callback.call(info) if callback
           end
-        rescue error
+        rescue => error
           info = {:error => error}
           callback.call(info) if callback
         end
       end
 
-      def subscribe(exchange_type, exchange_name, queue_name, options={}, &callback)
-        queue = @queues.fetch(queue_name, @channel.queue(queue_name, :auto_delete => true))
+      def subscribe(exchange_type, exchange_name, queue_name='', options={}, &callback)
+        previously_declared = @queues.has_key?(queue_name)
+        @queues[queue_name] ||= @channel.queue!(queue_name, :auto_delete => true)
+        queue = @queues[queue_name]
         queue.bind(@channel.method(exchange_type.to_sym).call(exchange_name))
-        unless queue.subscribed?
+        unless previously_declared
           queue.subscribe(&callback)
         end
       end
 
       def unsubscribe(&callback)
-        @queues.each do |queue|
+        @queues.values.each do |queue|
           queue.unsubscribe
         end
+        @queues = {}
         @channel.recover if connected?
         super
       end

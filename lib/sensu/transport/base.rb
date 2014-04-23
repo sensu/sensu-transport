@@ -42,8 +42,9 @@ module Sensu
       end
 
       def subscribe(type, pipe, funnel=nil, options={}, &callback)
+        info = {}
         message = ''
-        callback.call(message)
+        callback.call(info, message)
       end
 
       def unsubscribe(&callback)
