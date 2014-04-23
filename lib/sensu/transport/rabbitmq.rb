@@ -18,9 +18,9 @@ module Sensu
           @on_error.call(error)
         end
         @connection = AMQP.connect(options, {
-          :on_tcp_connection_failure => on_failure,
-          :on_possible_authentication_failure => on_failure
-        })
+                                     :on_tcp_connection_failure => on_failure,
+                                     :on_possible_authentication_failure => on_failure
+                                   })
         @connection.logger = @logger
         @connection.on_open do
           timeout.cancel
@@ -83,10 +83,13 @@ module Sensu
 
       def unsubscribe(&callback)
         @queues.values.each do |queue|
-          queue.before_recovery do
+          if connected?
             queue.unsubscribe
+          else
+            queue.before_recovery do
+              queue.unsubscribe
+            end
           end
-          queue.unsubscribe
         end
         @queues = {}
         @channel.recover if connected?
