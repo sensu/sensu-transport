@@ -51,6 +51,11 @@ module Sensu
         info = {}
         callback.call(info) if callback
       end
+
+      def stats(funnel, options={}, &callback)
+        info = {}
+        callback.call(info)
+      end
     end
   end
 end

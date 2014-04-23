@@ -12,7 +12,7 @@ describe "Sensu::Transport::Base" do
     Sensu::Transport::Base.should respond_to(:connect)
     @transport.should respond_to(:on_error, :before_reconnect, :after_reconnect,
                                  :connect, :connected?, :close,
-                                 :publish, :subscribe, :unsubscribe)
+                                 :publish, :subscribe, :unsubscribe, :stats)
   end
 
   it "behaves as expected" do
@@ -29,5 +29,6 @@ describe "Sensu::Transport::Base" do
     @transport.subscribe("foo", "bar", nil, {}, &callback).should eq(true)
     @transport.unsubscribe.should eq(nil)
     @transport.unsubscribe(&callback).should eq(true)
+    @transport.stats("foo", &callback).should eq(true)
   end
 end
