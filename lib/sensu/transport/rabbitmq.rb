@@ -77,7 +77,7 @@ module Sensu
         queue = @queues[queue_name]
         queue.bind(@channel.method(exchange_type.to_sym).call(exchange_name))
         unless previously_declared
-          queue.subscribe(&callback)
+          queue.subscribe(options, &callback)
         end
       end
 
