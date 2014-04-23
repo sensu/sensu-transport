@@ -1,9 +1,8 @@
-gem "amqp", "1.0.0"
+gem "amqp", "1.3.0"
 
 require "amqp"
 
 require File.join(File.dirname(__FILE__), "base")
-require File.join(File.dirname(__FILE__), "patches", "amq")
 
 module Sensu
   module Transport
