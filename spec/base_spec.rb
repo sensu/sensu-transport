@@ -22,7 +22,7 @@ describe "Sensu::Transport::Base" do
     @transport.after_reconnect(&callback).should be_an_instance_of(Proc)
     @transport.connect.should eq(nil)
     @transport.connect({}).should eq(nil)
-    @transport.connected?.should eq(nil)
+    @transport.connected?.should eq(false)
     @transport.close.should eq(nil)
     @transport.publish("foo", "bar", "baz").should eq(nil)
     @transport.publish("foo", "bar", "baz", {}, &callback).should eq(true)
