@@ -1,6 +1,6 @@
 # Sensu::Transport
 
-TODO: Write a gem description
+[![Code Climate](https://codeclimate.com/github/portertech/sensu-transport.png)](https://codeclimate.com/github/portertech/sensu-transport)
 
 ## Installation
 

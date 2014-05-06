@@ -7,15 +7,14 @@ require File.join(File.dirname(__FILE__), "base")
 module Sensu
   module Transport
     class RabbitMQ < Base
+      def initialize
+        super
+        @queues = {}
+      end
+
       def connect(options={})
-        timeout = EM::Timer.new(20) do
-          error = Error.new("timed out while attempting to connect to rabbitmq")
-          @on_error.call(error)
-        end
-        on_failure = Proc.new do
-          error = Error.new("failed to connect to rabbitmq")
-          @on_error.call(error)
-        end
+        timeout = create_connection_timeout
+        on_failure = on_connection_failure
         @connection = AMQP.connect(options, {
           :on_tcp_connection_failure => on_failure,
           :on_possible_authentication_failure => on_failure
@@ -32,22 +31,7 @@ module Sensu
         end
         @connection.on_tcp_connection_loss(&reconnect)
         @connection.on_skipped_heartbeats(&reconnect)
-        @channel = AMQP::Channel.new(@connection)
-        @channel.auto_recovery = true
-        @channel.on_error do |channel, channel_close|
-          error = Error.new("rabbitmq channel closed")
-          @on_error.call(error)
-        end
-        prefetch = 1
-        if options.is_a?(Hash)
-          prefetch = options[:prefetch] || 1
-        end
-        @channel.on_recovery do
-          @after_reconnect.call
-          @channel.prefetch(prefetch)
-        end
-        @channel.prefetch(prefetch)
-        @queues = {}
+        setup_channel(options)
       end
 
       def connected?
@@ -104,6 +88,40 @@ module Sensu
           }
           callback.call(info)
         end
+      end
+
+      private
+
+      def create_connection_timeout
+        EM::Timer.new(20) do
+          error = Error.new("timed out while attempting to connect to rabbitmq")
+          @on_error.call(error)
+        end
+      end
+
+      def on_connection_failure
+        Proc.new do
+          error = Error.new("failed to connect to rabbitmq")
+          @on_error.call(error)
+        end
+      end
+
+      def setup_channel(options={})
+        @channel = AMQP::Channel.new(@connection)
+        @channel.auto_recovery = true
+        @channel.on_error do |channel, channel_close|
+          error = Error.new("rabbitmq channel closed")
+          @on_error.call(error)
+        end
+        prefetch = 1
+        if options.is_a?(Hash)
+          prefetch = options.fetch(:prefetch, 1)
+        end
+        @channel.on_recovery do
+          @after_reconnect.call
+          @channel.prefetch(prefetch)
+        end
+        @channel.prefetch(prefetch)
       end
     end
   end
