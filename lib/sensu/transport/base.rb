@@ -125,6 +125,13 @@ module Sensu
         info = {}
         callback.call(info)
       end
+
+      # Discover available transports (Subclasses)
+      def self.descendants
+        ObjectSpace.each_object(Class).select do |klass|
+          klass < self
+        end
+      end
     end
   end
 end
