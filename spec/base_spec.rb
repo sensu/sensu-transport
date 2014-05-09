@@ -29,6 +29,10 @@ describe "Sensu::Transport::Base" do
     @transport.subscribe("foo", "bar", nil, {}, &callback).should eq(true)
     @transport.unsubscribe.should eq(nil)
     @transport.unsubscribe(&callback).should eq(true)
+    @transport.acknowledge({}).should eq(nil)
+    @transport.ack({}).should eq(nil)
+    @transport.acknowledge({}, &callback).should eq(true)
+    @transport.ack({}, &callback).should eq(true)
     @transport.stats("foo", &callback).should eq(true)
   end
 end

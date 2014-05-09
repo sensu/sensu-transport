@@ -79,6 +79,11 @@ module Sensu
         super
       end
 
+      def acknowledge(info, &callback)
+        info.ack
+        callback.call(info) if callback
+      end
+
       def stats(queue_name, options={}, &callback)
         options = options.merge(:auto_delete => true)
         @channel.queue(queue_name, options).status do |messages, consumers|

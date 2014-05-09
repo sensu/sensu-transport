@@ -73,7 +73,7 @@ module Sensu
       # @param pipe [String] the transport pipe name.
       # @param message [String] the message to be published to the transport.
       # @param options [Hash] the options to publish the message with.
-      # @yield [info] passes info to an optional callback/block.
+      # @yield [info] passes publish info to an optional callback/block.
       # @yieldparam info [Hash] contains publish information, which
       #   may contain an error object.
       def publish(type, pipe, message, options={}, &callback)
@@ -107,6 +107,15 @@ module Sensu
         info = {}
         callback.call(info) if callback
       end
+
+      # Acknowledge the delivery of a message from the transport.
+      #
+      # @param info [Hash] message information, eg. contains its id.
+      # @yield [info] passes acknowledgment info to an optional callback/block.
+      def acknowledge(info, &callback)
+        callback.call(info) if callback
+      end
+      alias_method :ack, :acknowledge
 
       # Transport funnel stats, such as message and consumer counts.
       #

@@ -50,6 +50,25 @@ describe "Sensu::Transport::RabbitMQ" do
     end
   end
 
+  it "can acknowledge the delivery of a message" do
+    async_wrapper do
+      @transport.connect
+      @transport.subscribe("direct", "foo", :ack => true) do |info, message|
+        @transport.acknowledge(info) do
+          timer(0.5) do
+            async_done
+          end
+        end
+      end
+      timer(1) do
+        @transport.publish("direct", "foo", "msg") do |info|
+          info.should be_kind_of(Hash)
+          info.should be_empty
+        end
+      end
+    end
+  end
+
   it "can get queue stats, message and consumer counts" do
     async_wrapper do
       @transport.connect
