@@ -12,13 +12,9 @@ And then execute:
 
     $ bundle
 
-Or install it yourself as:
-
-    $ gem install sensu-transport
-
 ## Usage
 
-TODO: Write usage instructions here
+Transport `Base` [documentation](http://rubydoc.info/github/portertech/sensu-transport/Sensu/Transport/Base).
 
 ## Contributing
 
