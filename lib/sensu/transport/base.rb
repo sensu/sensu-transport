@@ -60,7 +60,7 @@ module Sensu
       # @param options [Hash, String]
       # @return [Transport] the transport object.
       def self.connect(options={})
-        options ||= Hash.new
+        options ||= {}
         transport = self.new
         transport.connect(options)
         transport
