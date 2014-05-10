@@ -17,7 +17,7 @@ And then execute:
 ## Usage
 
 This library provides the transport Base class, its documentation can be found
-[here](http://rubydoc.info/github/portertech/sensu-transport/Sensu/Transport/Base).
+[here](http://rubydoc.info/github/sensu/sensu-transport/Sensu/Transport/Base).
 The RabbitMQ transport is also included, providing an example while
 continuing to be the primary Sensu transport, supported by the
 community and [Heavy Water Operations](http://hw-ops.com).
