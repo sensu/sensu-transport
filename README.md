@@ -1,6 +1,6 @@
 # Sensu::Transport
 
-[![Code Climate](https://codeclimate.com/github/portertech/sensu-transport.png)](https://codeclimate.com/github/portertech/sensu-transport)
+[![Code Climate](https://codeclimate.com/github/sensu/sensu-transport.png)](https://codeclimate.com/github/sensu/sensu-transport)
 
 ## Installation
 
@@ -25,7 +25,7 @@ community and [Heavy Water Operations](http://hw-ops.com).
 Please do not submit a pull request to add an additional transport to
 this library.
 
-1. Fork it ( https://github.com/[my-github-username]/sensu-transport/fork )
+1. [Fork it](https://github.com/sensu/sensu-transport/fork)
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
@@ -33,6 +33,4 @@ this library.
 
 ## License
 
-Sensu-Transport is released under the [MIT license](https://raw.github.com/portertech/sensu-transport/master/LICENSE.txt).
-
-[my-github-username]: portertech
+Sensu-Transport is released under the [MIT license](https://raw.github.com/sensu/sensu-transport/master/LICENSE.txt).
