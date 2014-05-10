@@ -7,7 +7,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["portertech@gmail.com"]
   spec.summary       = "The Sensu transport abstraction library"
   spec.description   = "The Sensu transport abstraction library"
-  spec.homepage      = "https://github.com/portertech/sensu-transport"
+  spec.homepage      = "https://github.com/sensu/sensu-transport"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
