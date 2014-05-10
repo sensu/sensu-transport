@@ -55,17 +55,6 @@ module Sensu
       # Close the transport connection.
       def close; end
 
-      # Connects to the transport.
-      #
-      # @param options [Hash, String]
-      # @return [Transport] the transport object.
-      def self.connect(options={})
-        options ||= Hash.new
-        transport = self.new
-        transport.connect(options)
-        transport
-      end
-
       # Publish a message to the transport.
       #
       # @param type [Symbol] the transport pipe type, possible values
@@ -117,8 +106,8 @@ module Sensu
       end
 
       # Alias for acknowledge()
-      def ack(*args)
-        acknowledge(*args)
+      def ack(*args, &callback)
+        acknowledge(*args, &callback)
       end
 
       # Transport funnel stats, such as message and consumer counts.

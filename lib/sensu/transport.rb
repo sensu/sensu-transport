@@ -1,12 +1,11 @@
 module Sensu
   module Transport
-    def self.connect(transport, options={})
+    def self.load(transport)
       require("sensu/transport/#{transport}")
       klass = Base.descendants.detect do |klass|
         klass.name.downcase.split("::").last == transport
       end
-      object = klass.connect(options)
-      object
+      klass.new
     end
   end
 end

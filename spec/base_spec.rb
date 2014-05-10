@@ -9,7 +9,6 @@ describe "Sensu::Transport::Base" do
   end
 
   it "provides a transport API (noop)" do
-    Sensu::Transport::Base.should respond_to(:connect)
     @transport.should respond_to(:on_error, :before_reconnect, :after_reconnect,
                                  :connect, :connected?, :close,
                                  :publish, :subscribe, :unsubscribe, :stats)
