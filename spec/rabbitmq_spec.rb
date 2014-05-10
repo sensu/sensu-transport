@@ -9,6 +9,7 @@ describe "Sensu::Transport::RabbitMQ" do
   end
 
   it "provides a transport API" do
+    Sensu::Transport::RabbitMQ.should respond_to(:connect)
     @transport.should respond_to(:on_error, :before_reconnect, :after_reconnect,
                                  :connect, :connected?, :close,
                                  :publish, :subscribe, :unsubscribe)

@@ -6,8 +6,8 @@ describe "Sensu::Transport" do
 
   it "can load and connect to the rabbitmq transport" do
     async_wrapper do
-      transport = Sensu::Transport.load("rabbitmq")
-      transport.connect
+      options = {}
+      transport = Sensu::Transport.connect("rabbitmq", options)
       timer(1) do
         transport.connected?.should be_true
         async_done
