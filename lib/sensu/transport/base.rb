@@ -117,8 +117,8 @@ module Sensu
       end
 
       # Alias for acknowledge()
-      def ack(*args)
-        acknowledge(*args)
+      def ack(*args, &callback)
+        acknowledge(*args, &callback)
       end
 
       # Transport funnel stats, such as message and consumer counts.
