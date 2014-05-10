@@ -115,7 +115,11 @@ module Sensu
       def acknowledge(info, &callback)
         callback.call(info) if callback
       end
-      alias_method :ack, :acknowledge
+
+      # Alias for acknowledge()
+      def ack(*args)
+        acknowledge(*args)
+      end
 
       # Transport funnel stats, such as message and consumer counts.
       #
