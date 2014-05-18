@@ -6,9 +6,9 @@ rvm:
   - 2.0.0
   - 2.1.0
   - jruby
-before_script:
-  - RABBITMQ_BASE=/tmp/rabbitmq RABBITMQ_CONFIG_FILE=spec/assets/rabbitmq rabbitmq-server &
-  - sleep 3
+services:
+  - rabbitmq
 notifications:
   irc:
     - "irc.freenode.net#sensu"
+script: "rspec . --tag \~ssl"
