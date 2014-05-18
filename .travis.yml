@@ -7,7 +7,7 @@ rvm:
   - 2.1.0
   - jruby
 before_script:
-  - RABBITMQ_CONFIG_FILE=spec/assets/rabbitmq rabbitmq-server &
+  - RABBITMQ_BASE=/tmp/rabbitmq RABBITMQ_CONFIG_FILE=spec/assets/rabbitmq rabbitmq-server &
   - sleep 3
 notifications:
   irc:
