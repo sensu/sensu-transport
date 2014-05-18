@@ -1,3 +1,5 @@
+gem "sensu-em"
+
 module Sensu
   module Transport
     class Error < StandardError; end
