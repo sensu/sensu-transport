@@ -11,4 +11,4 @@ services:
 notifications:
   irc:
     - "irc.freenode.net#sensu"
-script: "rspec . --tag \~ssl"
+script: "rspec . --tag ~ssl"
