@@ -80,4 +80,21 @@ describe "Sensu::Transport::RabbitMQ" do
       end
     end
   end
+
+  it "can use TLS", :ssl => true do
+    ssl_dir = File.join(File.dirname(__FILE__), "assets", "ssl", "client")
+    async_wrapper do
+      @transport.connect(
+        :port => 5671,
+        :ssl => {
+          :cert_chain_file => File.join(ssl_dir, "cert.pem"),
+          :private_key_file => File.join(ssl_dir, "key.pem")
+         }
+      )
+      timer(2) do
+        @transport.connected?.should be_true
+        async_done
+      end
+    end
+  end
 end
