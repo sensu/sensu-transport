@@ -12,7 +12,8 @@ describe "Sensu::Transport::Base" do
     Sensu::Transport::Base.should respond_to(:connect)
     @transport.should respond_to(:on_error, :before_reconnect, :after_reconnect,
                                  :connect, :connected?, :close,
-                                 :publish, :subscribe, :unsubscribe, :stats)
+                                 :publish, :subscribe, :unsubscribe,
+                                 :acknowledge, :ack, :stats)
   end
 
   it "behaves as expected" do

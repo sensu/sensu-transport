@@ -12,7 +12,8 @@ describe "Sensu::Transport::RabbitMQ" do
     Sensu::Transport::RabbitMQ.should respond_to(:connect)
     @transport.should respond_to(:on_error, :before_reconnect, :after_reconnect,
                                  :connect, :connected?, :close,
-                                 :publish, :subscribe, :unsubscribe)
+                                 :publish, :subscribe, :unsubscribe,
+                                 :acknowledge, :ack, :stats)
   end
 
   it "can publish and subscribe" do
@@ -44,6 +45,7 @@ describe "Sensu::Transport::RabbitMQ" do
       timer(1) do
         @transport.unsubscribe do
           @transport.close
+          @transport.connected?.should be_false
           async_done
         end
       end
@@ -89,7 +91,7 @@ describe "Sensu::Transport::RabbitMQ" do
         :ssl => {
           :cert_chain_file => File.join(ssl_dir, "cert.pem"),
           :private_key_file => File.join(ssl_dir, "key.pem")
-         }
+        }
       )
       timer(2) do
         @transport.connected?.should be_true
