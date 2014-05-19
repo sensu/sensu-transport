@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/sensu/sensu-transport.svg?branch=master)](https://travis-ci.org/sensu/sensu-transport)
 
 [![Code Climate](https://codeclimate.com/github/sensu/sensu-transport.png)](https://codeclimate.com/github/sensu/sensu-transport)
+[![Code Climate Coverage](https://codeclimate.com/github/sensu/sensu-transport/coverage.png)](https://codeclimate.com/github/sensu/sensu-transport)
 
 ## Installation
 
