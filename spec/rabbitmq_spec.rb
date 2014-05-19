@@ -1,11 +1,14 @@
 require File.join(File.dirname(__FILE__), "helpers")
 require "sensu/transport/rabbitmq"
+require "logger"
 
 describe "Sensu::Transport::RabbitMQ" do
   include Helpers
 
   before do
     @transport = Sensu::Transport::RabbitMQ.new
+    @transport.logger = Logger.new(STDOUT)
+    @transport.logger.level = Logger::FATAL
   end
 
   it "provides a transport API" do
@@ -80,6 +83,14 @@ describe "Sensu::Transport::RabbitMQ" do
         info[:consumers].should eq(0)
         async_done
       end
+    end
+  end
+
+  it "can fail to connect" do
+    async_wrapper do
+      @transport.connect(:port => 5555)
+      @transport.connected?.should be_false
+      async_done
     end
   end
 

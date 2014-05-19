@@ -122,11 +122,10 @@ module Sensu
         if options.is_a?(Hash)
           prefetch = options.fetch(:prefetch, 1)
         end
+        @channel.prefetch(prefetch)
         @channel.on_recovery do
           @after_reconnect.call
-          @channel.prefetch(prefetch)
         end
-        @channel.prefetch(prefetch)
       end
     end
   end
