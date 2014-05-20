@@ -15,7 +15,7 @@ module Helpers
   end
 
   def async_wrapper(&callback)
-    EM::run do
+    EM.run do
       timer(10) do
         raise "test timed out"
       end
@@ -24,6 +24,6 @@ module Helpers
   end
 
   def async_done
-    EM::stop_event_loop
+    EM.stop_event_loop
   end
 end
