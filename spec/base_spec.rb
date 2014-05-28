@@ -10,7 +10,7 @@ describe "Sensu::Transport::Base" do
 
   it "provides a transport API (noop)" do
     @transport.should respond_to(:on_error, :before_reconnect, :after_reconnect,
-                                 :connect, :connected?, :close,
+                                 :connect, :reconnect, :connected?, :close,
                                  :publish, :subscribe, :unsubscribe,
                                  :acknowledge, :ack, :stats)
   end
@@ -22,6 +22,7 @@ describe "Sensu::Transport::Base" do
     @transport.after_reconnect(&callback).should be_an_instance_of(Proc)
     @transport.connect.should eq(nil)
     @transport.connect({}).should eq(nil)
+    @transport.reconnect.should eq(nil)
     @transport.connected?.should eq(false)
     @transport.close.should eq(nil)
     @transport.publish("foo", "bar", "baz").should eq(nil)

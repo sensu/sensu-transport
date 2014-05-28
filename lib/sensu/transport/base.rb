@@ -15,7 +15,7 @@ module Sensu
         @after_reconnect = Proc.new {}
       end
 
-      # Sets the error callback.
+      # Set the error callback.
       #
       # @param callback [Proc] called in the event of a transport
       #   error, the exception object should be passed as a parameter.
@@ -24,7 +24,7 @@ module Sensu
         @on_error = callback
       end
 
-      # Sets the before reconnect callback.
+      # Set the before reconnect callback.
       #
       # @param callback [Proc] called before attempting to reconnect
       #   to the transport.
@@ -33,7 +33,7 @@ module Sensu
         @before_reconnect = callback
       end
 
-      # Sets the after reconnect callback.
+      # Set the after reconnect callback.
       #
       # @param callback [Proc] called after reconnecting to the
       #   transport.
@@ -46,6 +46,9 @@ module Sensu
       #
       # @param options [Hash, String]
       def connect(options={}); end
+
+      # Reconnect to the transport.
+      def reconnect; end
 
       # Indicates if connected to the transport.
       #
