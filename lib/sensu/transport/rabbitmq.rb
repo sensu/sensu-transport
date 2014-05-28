@@ -25,9 +25,6 @@ module Sensu
         reconnect_callback = Proc.new { reconnect }
         @connection.on_tcp_connection_loss(&reconnect_callback)
         @connection.on_skipped_heartbeats(&reconnect_callback)
-        @connection.on_recovery do
-          @after_reconnect.call
-        end
         setup_channel(options)
       end
 
@@ -35,7 +32,15 @@ module Sensu
         unless @connection.reconnecting?
           @connection_timeout.cancel
           @before_reconnect.call
-          @connection.periodically_reconnect(5)
+          timer = EM::PeriodicTimer.new(5) do
+            begin
+              @connection.reconnect(true)
+            rescue EventMachine::ConnectionError
+            end
+          end
+          @connection.on_recovery do
+            timer.cancel
+          end
         end
       end
 
@@ -128,6 +133,9 @@ module Sensu
           prefetch = options.fetch(:prefetch, 1)
         end
         @channel.prefetch(prefetch)
+        @channel.on_recovery do
+          @after_reconnect.call
+        end
       end
     end
   end
