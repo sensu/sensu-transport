@@ -26,4 +26,36 @@ describe "Sensu::Transport" do
       async_done
     end
   end
+
+  it "can set the transport on_error callback" do
+    async_wrapper do
+      expected_error = StandardError.new("foo")
+      Sensu::Transport.on_error do |error|
+        error.should eq(expected_error)
+        async_done
+      end
+      transport = Sensu::Transport.connect("rabbitmq")
+      transport.on_error.call(expected_error)
+    end
+  end
+
+  it "can set the transport before_reconnect callback" do
+    async_wrapper do
+      Sensu::Transport.before_reconnect do
+        async_done
+      end
+      transport = Sensu::Transport.connect("rabbitmq")
+      transport.before_reconnect.call
+    end
+  end
+
+  it "can set the transport after_reconnect callback" do
+    async_wrapper do
+      Sensu::Transport.after_reconnect do
+        async_done
+      end
+      transport = Sensu::Transport.connect("rabbitmq")
+      transport.after_reconnect.call
+    end
+  end
 end

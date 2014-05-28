@@ -9,37 +9,22 @@ module Sensu
       #   @return [Logger] the Sensu logger object.
       attr_accessor :logger
 
+      # @!attribute [rw] on_error
+      #   @return [Proc] the transport error callback.
+      attr_accessor :on_error
+
+      # @!attribute [rw] before_reconnect
+      #   @return [Proc] the transport before reconnect callback.
+      attr_accessor :before_reconnect
+
+      # @!attribute [rw] after_reconnect
+      #   @return [Proc] the transport after reconnect callback.
+      attr_accessor :after_reconnect
+
       def initialize
         @on_error = Proc.new {}
         @before_reconnect = Proc.new {}
         @after_reconnect = Proc.new {}
-      end
-
-      # Sets the error callback.
-      #
-      # @param callback [Proc] called in the event of a transport
-      #   error, the exception object should be passed as a parameter.
-      # @return [Proc] the error callback.
-      def on_error(&callback)
-        @on_error = callback
-      end
-
-      # Sets the before reconnect callback.
-      #
-      # @param callback [Proc] called before attempting to reconnect
-      #   to the transport.
-      # @return [Proc] the before reconnect callback.
-      def before_reconnect(&callback)
-        @before_reconnect = callback
-      end
-
-      # Sets the after reconnect callback.
-      #
-      # @param callback [Proc] called after reconnecting to the
-      #   transport.
-      # @return [Proc] the after reconnect callback.
-      def after_reconnect(&callback)
-        @after_reconnect = callback
       end
 
       # Transport connection setup.
