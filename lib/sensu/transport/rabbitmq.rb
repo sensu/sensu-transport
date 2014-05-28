@@ -25,6 +25,9 @@ module Sensu
         reconnect_callback = Proc.new { reconnect }
         @connection.on_tcp_connection_loss(&reconnect_callback)
         @connection.on_skipped_heartbeats(&reconnect_callback)
+        @connection.on_recovery do
+          @after_reconnect.call
+        end
         setup_channel(options)
       end
 
@@ -125,9 +128,6 @@ module Sensu
           prefetch = options.fetch(:prefetch, 1)
         end
         @channel.prefetch(prefetch)
-        @channel.on_recovery do
-          @after_reconnect.call
-        end
       end
     end
   end
