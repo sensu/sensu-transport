@@ -49,7 +49,8 @@ module Sensu
       end
 
       def close
-        @connection.close
+        callback = Proc.new { @connection.close }
+        connected? ? callback.call : EM.next_tick(callback)
       end
 
       def publish(exchange_type, exchange_name, message, options={}, &callback)

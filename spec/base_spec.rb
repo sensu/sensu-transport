@@ -9,31 +9,31 @@ describe "Sensu::Transport::Base" do
   end
 
   it "provides a transport API (noop)" do
-    @transport.should respond_to(:on_error, :before_reconnect, :after_reconnect,
-                                 :connect, :reconnect, :connected?, :close,
-                                 :publish, :subscribe, :unsubscribe,
-                                 :acknowledge, :ack, :stats)
+    expect(@transport).to respond_to(:on_error, :before_reconnect, :after_reconnect,
+                                     :connect, :reconnect, :connected?, :close,
+                                     :publish, :subscribe, :unsubscribe,
+                                     :acknowledge, :ack, :stats)
   end
 
   it "behaves as expected" do
     callback = Proc.new { true }
-    @transport.on_error(&callback).should be_an_instance_of(Proc)
-    @transport.before_reconnect(&callback).should be_an_instance_of(Proc)
-    @transport.after_reconnect(&callback).should be_an_instance_of(Proc)
-    @transport.connect.should eq(nil)
-    @transport.connect({}).should eq(nil)
-    @transport.reconnect.should eq(nil)
-    @transport.connected?.should eq(false)
-    @transport.close.should eq(nil)
-    @transport.publish("foo", "bar", "baz").should eq(nil)
-    @transport.publish("foo", "bar", "baz", {}, &callback).should eq(true)
-    @transport.subscribe("foo", "bar", nil, {}, &callback).should eq(true)
-    @transport.unsubscribe.should eq(nil)
-    @transport.unsubscribe(&callback).should eq(true)
-    @transport.acknowledge({}).should eq(nil)
-    @transport.ack({}).should eq(nil)
-    @transport.acknowledge({}, &callback).should eq(true)
-    @transport.ack({}, &callback).should eq(true)
-    @transport.stats("foo", &callback).should eq(true)
+    expect(@transport.on_error(&callback)).to be_kind_of(Proc)
+    expect(@transport.before_reconnect(&callback)).to be_an_instance_of(Proc)
+    expect(@transport.after_reconnect(&callback)).to be_an_instance_of(Proc)
+    expect(@transport.connect).to eq(nil)
+    expect(@transport.connect({})).to eq(nil)
+    expect(@transport.reconnect).to eq(nil)
+    expect(@transport.connected?).to eq(false)
+    expect(@transport.close).to eq(nil)
+    expect(@transport.publish("foo", "bar", "baz")).to eq(nil)
+    expect(@transport.publish("foo", "bar", "baz", {}, &callback)).to eq(true)
+    expect(@transport.subscribe("foo", "bar", nil, {}, &callback)).to eq(true)
+    expect(@transport.unsubscribe).to eq(nil)
+    expect(@transport.unsubscribe(&callback)).to eq(true)
+    expect(@transport.acknowledge({})).to eq(nil)
+    expect(@transport.ack({})).to eq(nil)
+    expect(@transport.acknowledge({}, &callback)).to eq(true)
+    expect(@transport.ack({}, &callback)).to eq(true)
+    expect(@transport.stats("foo", &callback)).to eq(true)
   end
 end

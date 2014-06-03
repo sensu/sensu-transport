@@ -10,7 +10,7 @@ describe "Sensu::Transport" do
       options = {}
       transport = Sensu::Transport.connect("rabbitmq", options)
       timer(1) do
-        transport.connected?.should be_true
+        expect(transport.connected?).to be(true)
         async_done
       end
     end
@@ -21,8 +21,8 @@ describe "Sensu::Transport" do
       logger = Logger.new(STDOUT)
       Sensu::Transport.logger = logger
       transport = Sensu::Transport.connect("rabbitmq")
-      transport.logger.should eq(logger)
-      transport.logger.should respond_to(:error)
+      expect(transport.logger).to eq(logger)
+      expect(transport.logger).to respond_to(:error)
       async_done
     end
   end

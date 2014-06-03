@@ -12,17 +12,17 @@ describe "Sensu::Transport::RabbitMQ" do
   end
 
   it "provides a transport API" do
-    @transport.should respond_to(:on_error, :before_reconnect, :after_reconnect,
-                                 :connect, :reconnect, :connected?, :close,
-                                 :publish, :subscribe, :unsubscribe,
-                                 :acknowledge, :ack, :stats)
+    expect(@transport).to respond_to(:on_error, :before_reconnect, :after_reconnect,
+                                     :connect, :reconnect, :connected?, :close,
+                                     :publish, :subscribe, :unsubscribe,
+                                     :acknowledge, :ack, :stats)
   end
 
   it "can publish and subscribe" do
     async_wrapper do
       @transport.connect
       callback = Proc.new do |message|
-        message.should eq("msg")
+        expect(message).to eq("msg")
         timer(0.5) do
           async_done
         end
@@ -31,8 +31,8 @@ describe "Sensu::Transport::RabbitMQ" do
       @transport.subscribe("direct", "bar", "baz", {}, &callback)
       timer(1) do
         @transport.publish("direct", "foo", "msg") do |info|
-          info.should be_kind_of(Hash)
-          info.should be_empty
+          expect(info).to be_kind_of(Hash)
+          expect(info).to be_empty
         end
       end
     end
@@ -47,7 +47,22 @@ describe "Sensu::Transport::RabbitMQ" do
       timer(1) do
         @transport.unsubscribe do
           @transport.close
-          @transport.connected?.should be_false
+          expect(@transport.connected?).to be(false)
+          async_done
+        end
+      end
+    end
+  end
+
+  it "can open and close the connection immediately" do
+    async_wrapper do
+      @transport.connect
+      @transport.close
+      expect(@transport.connected?).to be(false)
+      EM.next_tick do
+        expect(@transport.connected?).to be(false)
+        timer(1) do
+          expect(@transport.connected?).to be(false)
           async_done
         end
       end
@@ -66,8 +81,8 @@ describe "Sensu::Transport::RabbitMQ" do
       end
       timer(1) do
         @transport.publish("direct", "foo", "msg") do |info|
-          info.should be_kind_of(Hash)
-          info.should be_empty
+          expect(info).to be_kind_of(Hash)
+          expect(info).to be_empty
         end
       end
     end
@@ -77,9 +92,9 @@ describe "Sensu::Transport::RabbitMQ" do
     async_wrapper do
       @transport.connect
       @transport.stats("bar") do |info|
-        info.should be_kind_of(Hash)
-        info[:messages].should eq(0)
-        info[:consumers].should eq(0)
+        expect(info).to be_kind_of(Hash)
+        expect(info[:messages]).to eq(0)
+        expect(info[:consumers]).to eq(0)
         async_done
       end
     end
@@ -88,7 +103,7 @@ describe "Sensu::Transport::RabbitMQ" do
   it "can fail to connect" do
     async_wrapper do
       @transport.connect(:port => 5555)
-      @transport.connected?.should be_false
+      expect(@transport.connected?).to be(false)
       async_done
     end
   end
@@ -97,14 +112,14 @@ describe "Sensu::Transport::RabbitMQ" do
     ssl_dir = File.join(File.dirname(__FILE__), "assets", "ssl", "client")
     async_wrapper do
       @transport.connect(
-        :port => 5671,
-        :ssl => {
-          :cert_chain_file => File.join(ssl_dir, "cert.pem"),
-          :private_key_file => File.join(ssl_dir, "key.pem")
-        }
-      )
+                         :port => 5671,
+                         :ssl => {
+                           :cert_chain_file => File.join(ssl_dir, "cert.pem"),
+                           :private_key_file => File.join(ssl_dir, "key.pem")
+                         }
+                         )
       timer(2) do
-        @transport.connected?.should be_true
+        expect(@transport.connected?).to be(true)
         async_done
       end
     end
