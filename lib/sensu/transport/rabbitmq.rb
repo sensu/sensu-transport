@@ -111,9 +111,9 @@ module Sensu
 
       def next_connection_options
         if @eligible_options.nil? || @eligible_options.empty?
-          @eligible_options = @connection_options.dup
+          @eligible_options = @connection_options.shuffle
         end
-        @eligible_options.shuffle.shift
+        @eligible_options.shift
       end
 
       def connect_with_eligible_options
