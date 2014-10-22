@@ -13,28 +13,18 @@ module Sensu
       end
 
       def connect(options={})
+        set_connection_options(options)
         create_connection_timeout
-        @connection = AMQP.connect(options, {
-          :on_tcp_connection_failure => on_connection_failure,
-          :on_possible_authentication_failure => on_connection_failure
-        })
-        @connection.logger = @logger
-        @connection.on_open do
-          @connection_timeout.cancel
-        end
-        reconnect_callback = Proc.new { reconnect }
-        @connection.on_tcp_connection_loss(&reconnect_callback)
-        @connection.on_skipped_heartbeats(&reconnect_callback)
-        setup_channel(options)
+        connect_with_eligible_options
       end
 
       def reconnect
         unless @connection.reconnecting?
           @connection_timeout.cancel
           @before_reconnect.call
-          timer = EM::PeriodicTimer.new(5) do
+          timer = EM::PeriodicTimer.new(3) do
             begin
-              @connection.reconnect(true)
+              @connection.reconnect_to(next_connection_options)
             rescue EventMachine::ConnectionError
             end
           end
@@ -108,6 +98,10 @@ module Sensu
 
       private
 
+      def set_connection_options(options)
+        @connection_options = Array(options)
+      end
+
       def create_connection_timeout
         @connection_timeout = EM::Timer.new(20) do
           error = Error.new("timed out while attempting to connect to rabbitmq")
@@ -115,11 +109,27 @@ module Sensu
         end
       end
 
-      def on_connection_failure
-        Proc.new do
-          error = Error.new("failed to connect to rabbitmq")
-          @on_error.call(error)
+      def next_connection_options
+        if @eligible_options.nil? || @eligible_options.empty?
+          @eligible_options = @connection_options.dup
         end
+        @eligible_options.shuffle.shift
+      end
+
+      def connect_with_eligible_options
+        options = next_connection_options
+        reconnect_callback = Proc.new { reconnect }
+        @connection = AMQP.connect(options, {
+          :on_tcp_connection_failure => reconnect_callback,
+          :on_possible_authentication_failure => reconnect_callback
+        })
+        @connection.logger = @logger
+        @connection.on_open do
+          @connection_timeout.cancel
+        end
+        @connection.on_tcp_connection_loss(&reconnect_callback)
+        @connection.on_skipped_heartbeats(&reconnect_callback)
+        setup_channel(options)
       end
 
       def setup_channel(options={})
