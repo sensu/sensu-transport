@@ -105,8 +105,7 @@ module Sensu
 
       def create_connection_timeout
         @connection_timeout = EM::Timer.new(20) do
-          error = Error.new("timed out while attempting to connect to rabbitmq")
-          @on_error.call(error)
+          reconnect
         end
       end
 
