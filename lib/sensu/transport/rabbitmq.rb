@@ -22,14 +22,15 @@ module Sensu
         unless @connection.reconnecting?
           @connection_timeout.cancel
           @before_reconnect.call
-          timer = EM::PeriodicTimer.new(3) do
+          timer = EM::PeriodicTimer.new(5) do
             begin
               @connection.reconnect_to(next_connection_options)
             rescue EventMachine::ConnectionError
             end
           end
-          @connection.on_recovery do
+          @channel.on_recovery do
             timer.cancel
+            @after_reconnect.call
           end
         end
       end
@@ -144,9 +145,6 @@ module Sensu
           prefetch = options.fetch(:prefetch, 1)
         end
         @channel.prefetch(prefetch)
-        @channel.on_recovery do
-          @after_reconnect.call
-        end
       end
     end
   end
