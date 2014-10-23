@@ -19,18 +19,20 @@ module Sensu
       end
 
       def reconnect
-        unless @connection.reconnecting?
+        unless @reconnecting
+          @reconnecting = true
           @connection_timeout.cancel
           @before_reconnect.call
+          @connection.close_connection
           timer = EM::PeriodicTimer.new(5) do
-            begin
-              @connection.reconnect_to(next_connection_options)
-            rescue EventMachine::ConnectionError
+            unless connected?
+              connect_with_eligible_options do
+                @reconnecting = false
+                @after_reconnect.call
+              end
+            else
+              timer.cancel
             end
-          end
-          @channel.on_recovery do
-            timer.cancel
-            @after_reconnect.call
           end
         end
       end
@@ -116,16 +118,19 @@ module Sensu
         @eligible_options.shift
       end
 
-      def connect_with_eligible_options
+      def reconnect_callback
+        Proc.new { reconnect }
+      end
+
+      def connect_with_eligible_options(&callback)
         options = next_connection_options
-        reconnect_callback = Proc.new { reconnect }
-        @connection = AMQP.connect(options, {
-          :on_tcp_connection_failure => reconnect_callback,
-          :on_possible_authentication_failure => reconnect_callback
-        })
+        @connection = AMQP.connect(options)
+        @connection.on_tcp_connection_failure(&reconnect_callback)
+        @connection.on_possible_authentication_failure(&reconnect_callback)
         @connection.logger = @logger
         @connection.on_open do
           @connection_timeout.cancel
+          callback.call if callback
         end
         @connection.on_tcp_connection_loss(&reconnect_callback)
         @connection.on_skipped_heartbeats(&reconnect_callback)
