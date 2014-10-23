@@ -7,12 +7,8 @@ require File.join(File.dirname(__FILE__), "base")
 module Sensu
   module Transport
     class RabbitMQ < Base
-      def initialize
-        super
-        @queues = {}
-      end
-
       def connect(options={})
+        reset
         set_connection_options(options)
         create_connection_timeout
         connect_with_eligible_options
@@ -21,9 +17,8 @@ module Sensu
       def reconnect
         unless @reconnecting
           @reconnecting = true
-          @connection_timeout.cancel
           @before_reconnect.call
-          @connection.close_connection
+          reset
           timer = EM::PeriodicTimer.new(5) do
             unless connected?
               connect_with_eligible_options do
@@ -100,6 +95,12 @@ module Sensu
       end
 
       private
+
+      def reset
+        @queues = {}
+        @connection_timeout.cancel if @connection_timeout
+        @connection.close_connection if @connection
+      end
 
       def set_connection_options(options)
         @connection_options = Array(options)
