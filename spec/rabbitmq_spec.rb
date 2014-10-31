@@ -108,11 +108,11 @@ describe "Sensu::Transport::RabbitMQ" do
     end
   end
 
-  it "can handle eventmachine connection errors" do
+  it "will throw an error if it cannot resolve a hostname" do
     async_wrapper do
       expect {
         @transport.connect(:host => "2def33c3-cfbb-4993-b5ee-08d47f6d8793")
-      }.not_to raise_error
+      }.to raise_error(EventMachine::ConnectionError)
       async_done
     end
   end

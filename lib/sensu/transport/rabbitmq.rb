@@ -21,9 +21,13 @@ module Sensu
           reset
           timer = EM::PeriodicTimer.new(5) do
             unless connected?
-              connect_with_eligible_options do
-                @reconnecting = false
-                @after_reconnect.call
+              begin
+                connect_with_eligible_options do
+                  @reconnecting = false
+                  @after_reconnect.call
+                end
+              rescue EventMachine::ConnectionError
+              rescue Java::JavaLang::RuntimeException
               end
             else
               timer.cancel
@@ -123,13 +127,7 @@ module Sensu
         Proc.new { reconnect }
       end
 
-      def connection_error(error)
-        @logger.error("[amqp] Detected TCP connection failure: #{error}") if @logger
-        reconnect
-      end
-
-      def connect_with_eligible_options(&callback)
-        options = next_connection_options
+      def setup_connection(options={}, &callback)
         @connection = AMQP.connect(options)
         @connection.on_tcp_connection_failure(&reconnect_callback)
         @connection.on_possible_authentication_failure(&reconnect_callback)
@@ -140,11 +138,6 @@ module Sensu
         end
         @connection.on_tcp_connection_loss(&reconnect_callback)
         @connection.on_skipped_heartbeats(&reconnect_callback)
-        setup_channel(options)
-      rescue EventMachine::ConnectionError => error
-        connection_error(error)
-      rescue Java::JavaLang::RuntimeException => error
-        connection_error(error)
       end
 
       def setup_channel(options={})
@@ -159,6 +152,12 @@ module Sensu
           prefetch = options.fetch(:prefetch, 1)
         end
         @channel.prefetch(prefetch)
+      end
+
+      def connect_with_eligible_options(&callback)
+        options = next_connection_options
+        setup_connection(options, &callback)
+        setup_channel(options)
       end
     end
   end
