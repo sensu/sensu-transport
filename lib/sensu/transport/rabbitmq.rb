@@ -19,20 +19,7 @@ module Sensu
           @reconnecting = true
           @before_reconnect.call
           reset
-          timer = EM::PeriodicTimer.new(5) do
-            unless connected?
-              begin
-                connect_with_eligible_options do
-                  @reconnecting = false
-                  @after_reconnect.call
-                end
-              rescue EventMachine::ConnectionError
-              rescue Java::JavaLang::RuntimeException
-              end
-            else
-              timer.cancel
-            end
-          end
+          periodically_reconnect
         end
       end
 
@@ -158,6 +145,23 @@ module Sensu
         options = next_connection_options
         setup_connection(options, &callback)
         setup_channel(options)
+      end
+
+      def periodically_reconnect
+        timer = EM::PeriodicTimer.new(5) do
+          unless connected?
+            begin
+              connect_with_eligible_options do
+                @reconnecting = false
+                @after_reconnect.call
+              end
+            rescue EventMachine::ConnectionError
+            rescue Java::JavaLang::RuntimeException
+            end
+          else
+            timer.cancel
+          end
+        end
       end
     end
   end
