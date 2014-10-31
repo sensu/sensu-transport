@@ -115,9 +115,10 @@ module Sensu
       end
 
       def setup_connection(options={}, &callback)
-        @connection = AMQP.connect(options)
-        @connection.on_tcp_connection_failure(&reconnect_callback)
-        @connection.on_possible_authentication_failure(&reconnect_callback)
+        @connection = AMQP.connect(options, {
+          :on_tcp_connection_failure => reconnect_callback,
+          :on_possible_authentication_failure => reconnect_callback
+        })
         @connection.logger = @logger
         @connection.on_open do
           @connection_timeout.cancel
