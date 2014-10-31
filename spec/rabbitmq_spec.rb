@@ -108,6 +108,15 @@ describe "Sensu::Transport::RabbitMQ" do
     end
   end
 
+  it "can handle eventmachine connection errors" do
+    async_wrapper do
+      expect {
+        @transport.connect(:host => "2def33c3-cfbb-4993-b5ee-08d47f6d8793")
+      }.not_to raise_error
+      async_done
+    end
+  end
+
   it "can be configured for multiple brokers" do
     async_wrapper do
       @transport.connect([{:port => 5672}, {:port => 5672}])

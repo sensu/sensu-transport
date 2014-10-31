@@ -123,6 +123,11 @@ module Sensu
         Proc.new { reconnect }
       end
 
+      def connection_error(error)
+        @logger.error("[amqp] Detected TCP connection failure: #{error}") if @logger
+        reconnect
+      end
+
       def connect_with_eligible_options(&callback)
         options = next_connection_options
         @connection = AMQP.connect(options)
@@ -136,6 +141,10 @@ module Sensu
         @connection.on_tcp_connection_loss(&reconnect_callback)
         @connection.on_skipped_heartbeats(&reconnect_callback)
         setup_channel(options)
+      rescue EventMachine::ConnectionError => error
+        connection_error(error)
+      rescue Java::JavaLang::RuntimeException => error
+        connection_error(error)
       end
 
       def setup_channel(options={})
