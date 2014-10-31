@@ -103,7 +103,7 @@ module Sensu
       end
 
       def set_connection_options(options)
-        @connection_options = Array(options)
+        @connection_options = [options].flatten
       end
 
       def create_connection_timeout

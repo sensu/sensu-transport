@@ -108,6 +108,16 @@ describe "Sensu::Transport::RabbitMQ" do
     end
   end
 
+  it "can be configured for multiple brokers" do
+    async_wrapper do
+      @transport.connect([{:port => 5672}, {:port => 5672}])
+      timer(2) do
+        expect(@transport.connected?).to be(true)
+        async_done
+      end
+    end
+  end
+
   it "can use TLS", :ssl => true do
     ssl_dir = File.join(File.dirname(__FILE__), "assets", "ssl", "client")
     async_wrapper do
