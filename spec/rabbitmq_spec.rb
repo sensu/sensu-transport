@@ -112,7 +112,7 @@ describe "Sensu::Transport::RabbitMQ" do
     async_wrapper do
       expect {
         @transport.connect(:host => "2def33c3-cfbb-4993-b5ee-08d47f6d8793")
-      }.to raise_error(EventMachine::ConnectionError)
+      }.to raise_error
       async_done
     end
   end
