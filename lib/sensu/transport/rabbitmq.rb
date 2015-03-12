@@ -142,22 +142,33 @@ module Sensu
         @channel.prefetch(prefetch)
       end
 
+      def connection_error(error)
+        unless @reconnecting
+          error = Error.new("rabbitmq connection error: #{error}")
+          @on_error.call(error)
+        else
+          @logger.error("[amqp] Detected TCP connection failure: #{error}") if @logger
+        end
+      end
+
       def connect_with_eligible_options(&callback)
         options = next_connection_options
-        setup_connection(options, &callback)
-        setup_channel(options)
+        begin
+          setup_connection(options, &callback)
+          setup_channel(options)
+        rescue EventMachine::ConnectionError => error
+          connection_error(error)
+        rescue Java::JavaLang::RuntimeException => error
+          connection_error(error)
+        end
       end
 
       def periodically_reconnect
         timer = EM::PeriodicTimer.new(5) do
           unless connected?
-            begin
-              connect_with_eligible_options do
-                @reconnecting = false
-                @after_reconnect.call
-              end
-            rescue EventMachine::ConnectionError
-            rescue Java::JavaLang::RuntimeException
+            connect_with_eligible_options do
+              @reconnecting = false
+              @after_reconnect.call
             end
           else
             timer.cancel
