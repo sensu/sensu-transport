@@ -1,4 +1,8 @@
-source 'https://rubygems.org'
+source "https://rubygems.org"
 
-# Specify your gem's dependencies in sensu-spawn.gemspec
+gem "em-redis-unified",
+  :git => "https://github.com/portertech/em-redis.git",
+  :branch => "feature/pubsub"
+
+# Specify your gem"s dependencies in sensu-spawn.gemspec
 gemspec
