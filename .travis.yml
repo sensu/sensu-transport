@@ -8,6 +8,7 @@ rvm:
   - jruby
 services:
   - rabbitmq
+  - redis
 notifications:
   irc:
     - "irc.freenode.net#sensu"
