@@ -12,12 +12,14 @@ module Sensu
 
       def connect(options={})
         reset
-        @redis = EM::Protocols::Redis.connect(options)
-        @pubsub = EM::Protocols::Redis.connect(options)
+        @redis = setup_connection(options)
+        @pubsub = setup_connection(options)
       end
 
-      # Reconnect to the transport.
-      def reconnect; end
+      def reconnect
+        @redis.reconnect!
+        @pubsub.reconnect!
+      end
 
       def connected?
         @redis.connected? && @pubsub.connected?
@@ -66,6 +68,22 @@ module Sensu
 
       def reset
         @subscribed = {}
+      end
+
+      def setup_connection(options)
+        connection = EM::Protocols::Redis.connect(options)
+        connection.on_error do |error|
+          @on_error.call(error)
+        end
+        connection.before_reconnect do
+          @before_reconnect.call unless @reconnecting
+          @reconnecting = true
+        end
+        connection.after_reconnect do
+          @after_reconnect.call if @reconnecting
+          @reconnecting = false
+        end
+        connection
       end
 
       def pubsub_publish(pipe, message, &callback)
