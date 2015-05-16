@@ -11,6 +11,7 @@ module Sensu
       REDIS_KEYSPACE = "transport:"
 
       def connect(options={})
+        options ||= {}
         reset
         @redis = setup_connection(options)
         @pubsub = setup_connection(options)
@@ -32,19 +33,19 @@ module Sensu
       end
 
       def publish(type, pipe, message, options={}, &callback)
-        case type
-        when "fanout"
+        case type.to_sym
+        when :fanout
           pubsub_publish(pipe, message, &callback)
-        when "direct"
+        when :direct
           list_publish(pipe, message, &callback)
         end
       end
 
       def subscribe(type, pipe, funnel=nil, options={}, &callback)
-        case type
-        when "fanout"
+        case type.to_sym
+        when :fanout
           pubsub_subscribe(pipe, &callback)
-        when "direct"
+        when :direct
           list_subscribe(pipe, &callback)
         end
       end
