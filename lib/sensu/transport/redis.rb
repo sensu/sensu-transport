@@ -19,6 +19,7 @@ module Sensu
       def reconnect
         @redis.reconnect!
         @pubsub.reconnect!
+        unsubscribe
       end
 
       def connected?
