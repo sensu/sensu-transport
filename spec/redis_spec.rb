@@ -39,21 +39,23 @@ describe "Sensu::Transport::Redis" do
     end
   end
 
-#  it "can unsubscribe from queues and close the connection" do
-#    async_wrapper do
-#      @transport.connect
-#      @transport.subscribe("direct", "bar") do |info, message|
-#        true
-#      end
-#      timer(1) do
-#        @transport.unsubscribe do
-#          @transport.close
-#          expect(@transport.connected?).to be(false)
-#          async_done
-#        end
-#      end
-#    end
-#  end
+  it "can unsubscribe from queues and close the connection" do
+    async_wrapper do
+      @transport.connect
+      @transport.subscribe("direct", "bar") do |info, message|
+        true
+      end
+      timer(1) do
+        @transport.unsubscribe do
+          @transport.close
+          timer(1) do
+            expect(@transport.connected?).to be(false)
+            async_done
+          end
+        end
+      end
+    end
+  end
 
   it "can open and close the connection immediately" do
     async_wrapper do

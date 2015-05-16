@@ -47,11 +47,9 @@ module Sensu
       end
 
       def unsubscribe(&callback)
-        @pubsub.unsubscribe do
-          @logger.debug("unsubscribed from all redis channels") if @logger
-          callback.call({}) if callback
-        end
+        @pubsub.unsubscribe
         @subscribed = {}
+        super
       end
 
       def stats(funnel, options={}, &callback)
