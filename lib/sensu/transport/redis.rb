@@ -20,14 +20,22 @@ module Sensu
         @options = options || {}
         setup_connection("redis")
         setup_connection("pubsub")
+        monitor_connections
       end
 
-      def reconnect
-        # no-op for now
+      def reconnect(force=false)
+        @before_reconnect.call unless @reconnecting
+        unless @reconnecting && !force
+          @reconnecting = true
+          close
+          reset
+          connect
+          unsubscribe
+        end
       end
 
       def connected?
-        @connections.values.all? do |connection|
+        !@connections.empty? && @connections.values.all? do |connection|
           connection.connected?
         end
       end
@@ -59,11 +67,9 @@ module Sensu
       def unsubscribe(&callback)
         @connections.each do |name, connection|
           case name
-          when "redis"
-            # no-op
           when "pubsub"
             connection.unsubscribe
-          else
+          when /^#{REDIS_KEYSPACE}/
             connection.close
             @connections.delete(name)
           end
@@ -88,21 +94,25 @@ module Sensu
       end
 
       def setup_connection(name)
-        return @connections[name] if @connections[name]
         connection = EM::Protocols::Redis.connect(@options)
+        connection.auto_reconnect = false
         connection.on_error do |error|
           @on_error.call(error)
         end
-        connection.before_reconnect do
-          @before_reconnect.call unless @reconnecting
-          @reconnecting = true
-        end
-        connection.after_reconnect do
-          @after_reconnect.call if @reconnecting
-          @reconnecting = false
-        end
         @connections[name] = connection
         connection
+      end
+
+      def monitor_connections
+        @connection_monitor.cancel if @connection_monitor
+        @connection_monitor = EM::PeriodicTimer.new(3) do
+          if !connected?
+            reconnect(true)
+          elsif @reconnecting
+            @after_reconnect.call
+            @reconnecting = false
+          end
+        end
       end
 
       def pubsub_publish(pipe, message, &callback)
