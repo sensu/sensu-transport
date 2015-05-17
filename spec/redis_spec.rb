@@ -80,13 +80,13 @@ describe "Sensu::Transport::Redis" do
     end
   end
 
-#  it "can fail to connect" do
-#    async_wrapper do
-#      @transport.connect(:port => 5555)
-#      expect(@transport.connected?).to be(false)
-#      async_done
-#    end
-#  end
+  it "can fail to connect" do
+    async_wrapper do
+      @transport.connect(:port => 5555)
+      expect(@transport.connected?).to be(false)
+      async_done
+    end
+  end
 
   it "will throw an error if it cannot resolve a hostname" do
     async_wrapper do
