@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency("sensu-em")
   spec.add_dependency("amqp", "1.5.0")
-#  spec.add_dependency("em-redis-unified")
+  spec.add_dependency("em-redis-unified")
 
   spec.add_development_dependency "bundler", "~> 1.6"
   spec.add_development_dependency "rake"
