@@ -38,7 +38,7 @@ module Sensu
           @reconnecting = true
           close
           reset
-          connect
+          connect(@options)
         end
       end
 
@@ -199,7 +199,7 @@ module Sensu
       # @param name [String]
       # @return [String]
       def redis_key(type, name)
-        db = @options[:db] || 0
+        db = @options.is_a?(Hash) ? (@options[:db] || 0) : 0
         [REDIS_KEYSPACE, db, type, name].join(":")
       end
 
