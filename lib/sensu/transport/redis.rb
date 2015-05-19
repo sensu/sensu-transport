@@ -96,7 +96,7 @@ module Sensu
       # "pool" is monitored as a whole. The transport `@on_error`
       # callback is called when Redis errors are encountered.
       #
-      # @param name [String]
+      # @param name [String] the Redis connection name.
       # @return [Object]
       def redis_connection(name)
         return @connections[name] if @connections[name]
@@ -115,7 +115,8 @@ module Sensu
       # If one or more connections is not connected, a forced
       # `reconnect()` is triggered. If all connections are connected
       # after reconnecting, the transport `@after_reconnect`
-      # callbacked is called.
+      # callbacked is called. If a connection monitor (timer) already
+      # exists, it is canceled.
       def monitor_connections
         @connection_monitor.cancel if @connection_monitor
         @connection_monitor = EM::PeriodicTimer.new(3) do
@@ -145,8 +146,8 @@ module Sensu
       #
       # http://redis.io/topics/pubsub
       #
-      # @param pipe [String]
-      # @param message [String]
+      # @param pipe [String] the transport pipe name.
+      # @param message [String] the message to be published to the transport.
       # @yield [info] passes publish info to an optional callback/block.
       # @yieldparam info [Hash] contains publish information.
       # @yieldparam subscribers [String] current subscriber count.
@@ -168,10 +169,9 @@ module Sensu
       # "unsubscribe" are ignored, only messages with type "message"
       # are passsed to the provided consumer/method callback/block.
       #
-      #
       # http://redis.io/topics/pubsub
       #
-      # @param channel [String] the Redis channel name.
+      # @param pipe [String] the transport pipe name.
       # @yield [info, message] passes message info and content to
       #   the consumer/method callback/block.
       # @yieldparam info [Hash] contains the channel name.
@@ -191,7 +191,16 @@ module Sensu
         end
       end
 
-      # Push (publish) a message onto a Redis list.
+      # Push (publish) a message onto a Redis list. The `redis_key()`
+      # method is used to create a Redis list key, using the transport
+      # pipe name. The publish callback info includes the current list
+      # size (queued).
+      #
+      # @param pipe [String] the transport pipe name.
+      # @param message [String] the message to be published to the transport.
+      # @yield [info] passes publish info to an optional callback/block.
+      # @yieldparam info [Hash] contains publish information.
+      # @yieldparam queued [String] current list size.
       def list_publish(pipe, message, &callback)
         list = redis_key("list", pipe)
         redis_connection("redis").rpush(list, message) do |queued|
@@ -200,6 +209,18 @@ module Sensu
         end
       end
 
+      # Shift a message off of a Redis list and schedule another shift
+      # on the next tick of the event loop (reactor). Redis BLPOP is a
+      # connection blocking Redis command, this method creates a named
+      # Redis connection for each list. Multiple Redis connections for
+      # BLPOP commands is far more efficient than timer or next tick
+      # polling with LPOP.
+      #
+      # @param list [String]
+      # @yield [info, message] passes message info and content to
+      #   the consumer/method callback/block.
+      # @yieldparam info [Hash] an empty hash.
+      # @yieldparam message [String] message content.
       def list_blpop(list, &callback)
         redis_connection(list).blpop(list, 0) do |_, message|
           EM::next_tick {list_blpop(list, &callback)}
@@ -207,6 +228,16 @@ module Sensu
         end
       end
 
+      # Subscribe to a Redis list, shifting message off as they become
+      # available. The `redis_key()` method is used to create a Redis
+      # list key, using the transport pipe name. The `list_blpop()`
+      # method is used to do the actual work.
+      #
+      # @param pipe [String] the transport pipe name.
+      # @yield [info, message] passes message info and content to
+      #   the consumer/method callback/block.
+      # @yieldparam info [Hash] an empty hash.
+      # @yieldparam message [String] message content.
       def list_subscribe(pipe, &callback)
         list = redis_key("list", pipe)
         list_blpop(list, &callback)
