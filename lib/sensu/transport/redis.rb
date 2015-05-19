@@ -15,15 +15,13 @@ module Sensu
         super
       end
 
-      # Redis transport connection setup. This method sets `@options`,
-      # creates a named Redis connection "redis", and starts a
-      # connection monitor.
+      # Redis transport connection setup. This method sets `@options`
+      # and creates a named Redis connection "redis".
       #
       # @param options [Hash, String]
       def connect(options={})
         @options = options || {}
         redis_connection("redis")
-        monitor_connections
       end
 
       # Reconnect to the Redis transport. The Redis connections used
@@ -150,32 +148,12 @@ module Sensu
         @connections = {}
       end
 
-      # Return or setup a named Redis connection. This method creates
-      # a Redis connection object using the provided Redis transport
-      # options. Redis auto-reconnect is disabled as the connection
-      # "pool" is monitored as a whole. The transport `@on_error`
-      # callback is called when Redis errors are encountered.
-      #
-      # @param name [String] the Redis connection name.
-      # @return [Object]
-      def redis_connection(name)
-        return @connections[name] if @connections[name]
-        connection = EM::Protocols::Redis.connect(@options)
-        connection.auto_reconnect = false
-        connection.reconnect_on_error = false
-        connection.on_error do |error|
-          @on_error.call(error)
-        end
-        @connections[name] = connection
-        connection
-      end
-
       # Monitor current Redis connections, the connection "pool". A
       # timer is used to check on the connections, every `3` seconds.
       # If one or more connections is not connected, a forced
       # `reconnect()` is triggered. If all connections are connected
       # after reconnecting, the transport `@after_reconnect`
-      # callbacked is called. If a connection monitor (timer) already
+      # callback is called. If a connection monitor (timer) already
       # exists, it is canceled.
       def monitor_connections
         @connection_monitor.cancel if @connection_monitor
@@ -187,6 +165,29 @@ module Sensu
             @reconnecting = false
           end
         end
+      end
+
+      # Return or setup a named Redis connection. This method creates
+      # a Redis connection object using the provided Redis transport
+      # options. Redis auto-reconnect is disabled as the connection
+      # "pool" is monitored as a whole. The transport `@on_error`
+      # callback is called when Redis errors are encountered. This
+      # method creates/replaces the connection monitor after setting
+      # up the connection and before adding it to the pool.
+      #
+      # @param name [String] the Redis connection name.
+      # @return [Object]
+      def redis_connection(name)
+        return @connections[name] if @connections[name]
+        connection = EM::Protocols::Redis.connect(@options)
+        connection.auto_reconnect = false
+        connection.reconnect_on_error = false
+        connection.on_error do |error|
+          @on_error.call(error)
+        end
+        monitor_connections
+        @connections[name] = connection
+        connection
       end
 
       # Create a Redis key within the defined Redis keyspace. This
