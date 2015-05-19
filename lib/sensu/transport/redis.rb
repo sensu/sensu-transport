@@ -6,6 +6,7 @@ module Sensu
   module Transport
     class Redis < Base
 
+      # The Redis keyspace to use for the transport.
       REDIS_KEYSPACE = "transport"
 
       def initialize
@@ -14,12 +15,25 @@ module Sensu
         super
       end
 
+      # Redis transport connection setup. This method sets `@options`,
+      # creates a named Redis connection "redis", and starts a
+      # connection monitor.
+      #
+      # @param options [Hash, String]
       def connect(options={})
         @options = options || {}
         redis_connection("redis")
         monitor_connections
       end
 
+      # Reconnect to the Redis transport. The Redis connections used
+      # by the transport have auto-reconnect disabled; if a single
+      # connection is unhealthy, all connections are closed, the
+      # transport is reset, and new connections are made. If the
+      # transport is not already reconnecting to Redis, the
+      # `@before_reconnect` transport callback is called.
+      #
+      # @param force [Boolean] the reconnect.
       def reconnect(force=false)
         @before_reconnect.call unless @reconnecting
         unless @reconnecting && !force
@@ -30,18 +44,36 @@ module Sensu
         end
       end
 
+      # Indicates if ALL Redis connections are connected.
+      #
+      # @return [TrueClass, FalseClass]
       def connected?
         !@connections.empty? && @connections.values.all? do |connection|
           connection.connected?
         end
       end
 
+      # Close ALL Redis connections.
       def close
         @connections.each_value do |connection|
           connection.close
         end
       end
 
+      # Publish a message to the Redis transport. The transport pipe
+      # type determines the method of sending messages to consumers
+      # using Redis, either using PubSub or a list. The appropriate
+      # publish method is call for the pipe type given. The Redis
+      # transport ignores publish options.
+      #
+      # @param type [Symbol] the transport pipe type, possible values
+      #   are: :direct and :fanout.
+      # @param pipe [String] the transport pipe name.
+      # @param message [String] the message to be published to the transport.
+      # @param options [Hash] IGNORED by this transport.
+      # @yield [info] passes publish info to an optional callback/block.
+      # @yieldparam info [Hash] contains publish information, which
+      #   may contain an error object.
       def publish(type, pipe, message, options={}, &callback)
         case type.to_sym
         when :fanout
@@ -51,6 +83,21 @@ module Sensu
         end
       end
 
+      # Subscribe to a Redis transport pipe. The transport pipe
+      # type determines the method of consuming messages from Redis,
+      # either using PubSub or a list. The appropriate subscribe
+      # method is call for the pipe type given. The Redis transport
+      # ignores subscribe options and the funnel name.
+      #
+      # @param type [Symbol] the transport pipe type, possible values
+      #   are: :direct and :fanout.
+      # @param pipe [String] the transport pipe name.
+      # @param funnel [String] IGNORED by this transport.
+      # @param options [Hash] IGNORED by this transport.
+      # @yield [info, message] passes message info and content to
+      #   the consumer callback/block.
+      # @yieldparam info [Hash] contains message information.
+      # @yieldparam message [String] message.
       def subscribe(type, pipe, funnel=nil, options={}, &callback)
         case type.to_sym
         when :fanout
@@ -60,6 +107,13 @@ module Sensu
         end
       end
 
+      # Unsubscribe from all transport pipes. This method iterates
+      # through the current named Redis connections, unsubscribing the
+      # "pubsub" connection from Redis channels, and closing/deleting
+      # BLPOP connections.
+      #
+      # @yield [info] passes info to an optional callback/block.
+      # @yieldparam info [Hash] empty hash.
       def unsubscribe(&callback)
         @connections.each do |name, connection|
           case name
@@ -73,6 +127,12 @@ module Sensu
         super
       end
 
+      # Redis transport pipe/funnel stats, such as message and
+      # consumer counts. This method is currently unable to determine
+      # the consumer count for a Redis list.
+      #
+      # @param funnel [String] the transport funnel to get stats for.
+      # @param options [Hash] IGNORED by this transport.
       def stats(funnel, options={}, &callback)
         redis_connection("redis").llen(funnel) do |messages|
           info = {
