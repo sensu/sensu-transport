@@ -19,7 +19,6 @@ module Sensu
       def connect(options={})
         @options = options || {}
         setup_connection("redis")
-        setup_connection("pubsub")
         monitor_connections
       end
 
@@ -30,7 +29,6 @@ module Sensu
           close
           reset
           connect
-          unsubscribe
         end
       end
 
@@ -96,6 +94,7 @@ module Sensu
       def setup_connection(name)
         connection = EM::Protocols::Redis.connect(@options)
         connection.auto_reconnect = false
+        connection.reconnect_on_error = false
         connection.on_error do |error|
           @on_error.call(error)
         end
@@ -123,19 +122,24 @@ module Sensu
         end
       end
 
-      def pubsub_subscribe(pipe, &callback)
-        channel = [REDIS_KEYSPACE, "channel", pipe].join(":")
+      def channel_subscribe(channel, &callback)
         @connections["pubsub"].subscribe(channel) do |type, channel, message|
           case type
           when "subscribe"
-            @logger.debug("subscribed to redis channel", :channel => channel) if @logger
+            @logger.debug("subscribed to redis channel: #{channel}") if @logger
           when "unsubscribe"
-            @logger.debug("unsubscribed from redis channel", :channel => channel) if @logger
+            @logger.debug("unsubscribed from redis channel: #{channel}") if @logger
           when "message"
             info = {:channel => channel}
             callback.call(info, message)
           end
         end
+      end
+
+      def pubsub_subscribe(pipe, &callback)
+        channel = [REDIS_KEYSPACE, "channel", pipe].join(":")
+        setup_connection("pubsub") unless @connections["pubsub"]
+        channel_subscribe(channel, &callback)
       end
 
       def list_publish(pipe, message, &callback)

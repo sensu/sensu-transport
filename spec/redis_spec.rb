@@ -18,7 +18,7 @@ describe "Sensu::Transport::Redis" do
                                      :acknowledge, :ack, :stats)
   end
 
-  it "can publish and subscribe" do
+  it "can publish and subscribe to direct pipes" do
     async_wrapper do
       @transport.connect
       callback = Proc.new do |info, message|
@@ -39,7 +39,29 @@ describe "Sensu::Transport::Redis" do
     end
   end
 
-  it "can unsubscribe from queues and close the connection" do
+  it "can publish and subscribe to fanout pipes" do
+    async_wrapper do
+      @transport.connect
+      callback = Proc.new do |info, message|
+        expect(info).to be_kind_of(Hash)
+        expect(info[:channel]).to eq("transport:channel:foo")
+        expect(message).to eq("msg")
+        timer(0.5) do
+          async_done
+        end
+      end
+      @transport.subscribe("fanout", "foo", "baz", {}, &callback)
+      @transport.subscribe("fanout", "bar", "baz", {}, &callback)
+      timer(1) do
+        @transport.publish("fanout", "foo", "msg") do |info|
+          expect(info).to be_kind_of(Hash)
+          expect(info[:subscribers]).to eq(1)
+        end
+      end
+    end
+  end
+
+  it "can unsubscribe and close the connection" do
     async_wrapper do
       @transport.connect
       @transport.subscribe("direct", "bar") do |info, message|
@@ -64,6 +86,29 @@ describe "Sensu::Transport::Redis" do
       timer(1) do
         expect(@transport.connected?).to be(false)
         async_done
+      end
+    end
+  end
+
+  it "can subscribe to a fanout pipe, reconnect, and subscribe to the same pipe again" do
+    async_wrapper do
+      @transport.connect
+      callback = Proc.new do |info, message|
+        expect(info).to be_kind_of(Hash)
+        expect(info[:channel]).to eq("transport:channel:foo")
+        expect(message).to eq("msg")
+        timer(0.5) do
+          async_done
+        end
+      end
+      @transport.subscribe("fanout", "foo", "baz", {}, &callback)
+      @transport.reconnect
+      @transport.subscribe("fanout", "foo", "baz", {}, &callback)
+      timer(1) do
+        @transport.publish("fanout", "foo", "msg") do |info|
+          expect(info).to be_kind_of(Hash)
+          expect(info[:subscribers]).to eq(1)
+        end
       end
     end
   end
