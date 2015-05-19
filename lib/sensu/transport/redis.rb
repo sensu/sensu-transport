@@ -1,6 +1,4 @@
-gem "em-redis-unified"
-
-require "em-redis"
+require "em-redis-unified"
 
 require File.join(File.dirname(__FILE__), "base")
 
@@ -114,8 +112,12 @@ module Sensu
         end
       end
 
+      def redis_key(type, name)
+        [REDIS_KEYSPACE, type, name].join(":")
+      end
+
       def pubsub_publish(pipe, message, &callback)
-        channel = [REDIS_KEYSPACE, "channel", pipe].join(":")
+        channel = redis_key("channel", pipe)
         @connections["redis"].publish(channel, message) do |subscribers|
           info = {:subscribers => subscribers}
           callback.call(info) if callback
@@ -137,13 +139,13 @@ module Sensu
       end
 
       def pubsub_subscribe(pipe, &callback)
-        channel = [REDIS_KEYSPACE, "channel", pipe].join(":")
+        channel = redis_key("channel", pipe)
         setup_connection("pubsub") unless @connections["pubsub"]
         channel_subscribe(channel, &callback)
       end
 
       def list_publish(pipe, message, &callback)
-        list = [REDIS_KEYSPACE, "list", pipe].join(":")
+        list = redis_key("list", pipe)
         @connections["redis"].rpush(list, message) do |queued|
           info = {:queued => queued}
           callback.call(info) if callback
@@ -158,7 +160,7 @@ module Sensu
       end
 
       def list_subscribe(pipe, &callback)
-        list = [REDIS_KEYSPACE, "list", pipe].join(":")
+        list = redis_key("list", pipe)
         setup_connection(list)
         list_blpop(list, &callback)
       end
