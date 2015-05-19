@@ -44,7 +44,7 @@ describe "Sensu::Transport::Redis" do
       @transport.connect
       callback = Proc.new do |info, message|
         expect(info).to be_kind_of(Hash)
-        expect(info[:channel]).to eq("transport:channel:foo")
+        expect(info[:channel]).to eq("transport:0:channel:foo")
         expect(message).to eq("msg")
         timer(0.5) do
           async_done
@@ -57,6 +57,21 @@ describe "Sensu::Transport::Redis" do
           expect(info).to be_kind_of(Hash)
           expect(info[:subscribers]).to eq(1)
         end
+      end
+    end
+  end
+
+  it "can scope redis pubsub to the selected database" do
+    async_wrapper do
+      @transport.connect(:db => 1)
+      callback = Proc.new do |info, message|
+        expect(info).to be_kind_of(Hash)
+        expect(info[:channel]).to eq("transport:1:channel:foo")
+        async_done
+      end
+      @transport.subscribe("fanout", "foo", "baz", {}, &callback)
+      timer(1) do
+        @transport.publish("fanout", "foo", "msg")
       end
     end
   end
@@ -95,7 +110,7 @@ describe "Sensu::Transport::Redis" do
       @transport.connect
       callback = Proc.new do |info, message|
         expect(info).to be_kind_of(Hash)
-        expect(info[:channel]).to eq("transport:channel:foo")
+        expect(info[:channel]).to eq("transport:0:channel:foo")
         expect(message).to eq("msg")
         timer(0.5) do
           async_done

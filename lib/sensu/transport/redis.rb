@@ -192,12 +192,15 @@ module Sensu
 
       # Create a Redis key within the defined Redis keyspace. This
       # method is used to create keys that are unlikely to collide.
+      # The Redis connection database number is included in the Redis
+      # key as pubsub is not scoped to the selected database.
       #
       # @param type [String]
       # @param name [String]
       # @return [String]
       def redis_key(type, name)
-        [REDIS_KEYSPACE, type, name].join(":")
+        db = @options[:db] || 0
+        [REDIS_KEYSPACE, db, type, name].join(":")
       end
 
       # Publish a message to a Redis channel (PubSub). The
