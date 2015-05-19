@@ -16,7 +16,7 @@ module Sensu
 
       def connect(options={})
         @options = options || {}
-        setup_connection("redis")
+        redis_connection("redis")
         monitor_connections
       end
 
@@ -74,7 +74,7 @@ module Sensu
       end
 
       def stats(funnel, options={}, &callback)
-        @connections["redis"].llen(funnel) do |messages|
+        redis_connection("redis").llen(funnel) do |messages|
           info = {
             :messages => messages,
             :consumers => 0
@@ -90,15 +90,16 @@ module Sensu
         @connections = {}
       end
 
-      # Setup a named Redis connection. This method creates a Redis
-      # connection object using the provided Redis transport options.
-      # Redis auto-reconnect is disabled as the connection "pool" is
-      # monitored as a whole. The transport `@on_error` callback is
-      # called when Redis errors are encountered.
+      # Return or setup a named Redis connection. This method creates
+      # a Redis connection object using the provided Redis transport
+      # options. Redis auto-reconnect is disabled as the connection
+      # "pool" is monitored as a whole. The transport `@on_error`
+      # callback is called when Redis errors are encountered.
       #
       # @param name [String]
       # @return [Object]
-      def setup_connection(name)
+      def redis_connection(name)
+        return @connections[name] if @connections[name]
         connection = EM::Protocols::Redis.connect(@options)
         connection.auto_reconnect = false
         connection.reconnect_on_error = false
@@ -151,20 +152,22 @@ module Sensu
       # @yieldparam subscribers [String] current subscriber count.
       def pubsub_publish(pipe, message, &callback)
         channel = redis_key("channel", pipe)
-        @connections["redis"].publish(channel, message) do |subscribers|
+        redis_connection("redis").publish(channel, message) do |subscribers|
           info = {:subscribers => subscribers}
           callback.call(info) if callback
         end
       end
 
-      # Subscribe to a Redis channel (PubSub). The subscribe callback
-      # is called whenever a message is published to the Redis
-      # channel. Channel messages with the type "subscribe" and
+      # Subscribe to a Redis channel (PubSub). The `redis_key()`
+      # method is used to create a Redis channel key, using the
+      # transport pipe name. The named Redis connection "pubsub" is
+      # used for the Redis SUBSCRIBE command set, as the Redis context
+      # is limited and enforced for the connection. The subscribe
+      # callback is called whenever a message is published to the
+      # Redis channel. Channel messages with the type "subscribe" and
       # "unsubscribe" are ignored, only messages with type "message"
       # are passsed to the provided consumer/method callback/block.
-      # The named Redis connection "pubsub" is used for the SUBSCRIBE
-      # command set, as the Redis context is limited and enforced for
-      # the connection.
+      #
       #
       # http://redis.io/topics/pubsub
       #
@@ -173,8 +176,9 @@ module Sensu
       #   the consumer/method callback/block.
       # @yieldparam info [Hash] contains the channel name.
       # @yieldparam message [String] message content.
-      def channel_subscribe(channel, &callback)
-        @connections["pubsub"].subscribe(channel) do |type, channel, message|
+      def pubsub_subscribe(pipe, &callback)
+        channel = redis_key("channel", pipe)
+        redis_connection("pubsub").subscribe(channel) do |type, channel, message|
           case type
           when "subscribe"
             @logger.debug("subscribed to redis channel: #{channel}") if @logger
@@ -187,37 +191,17 @@ module Sensu
         end
       end
 
-      # Subscribe to a Redis channel (PubSub). The `redis_key()`
-      # method is used to create a Redis channel key, using the
-      # transport pipe name. A named Redis connection is created for
-      # Redis PubSub commands, "pubsub", if it hasn't already been
-      # created. The `channel_subscribe()` method is used for the
-      # actual subscribing.
-      #
-      # http://redis.io/topics/pubsub
-      #
-      # @param pipe [String] the transport pipe name.
-      # @yield [info, message] passes message info and content to
-      #   the consumer/method callback/block.
-      # @yieldparam info [Hash] contains the channel name.
-      # @yieldparam message [String] message content.
-      def pubsub_subscribe(pipe, &callback)
-        channel = redis_key("channel", pipe)
-        setup_connection("pubsub") unless @connections["pubsub"]
-        channel_subscribe(channel, &callback)
-      end
-
       # Push (publish) a message onto a Redis list.
       def list_publish(pipe, message, &callback)
         list = redis_key("list", pipe)
-        @connections["redis"].rpush(list, message) do |queued|
+        redis_connection("redis").rpush(list, message) do |queued|
           info = {:queued => queued}
           callback.call(info) if callback
         end
       end
 
       def list_blpop(list, &callback)
-        @connections[list].blpop(list, 0) do |_, message|
+        redis_connection(list).blpop(list, 0) do |_, message|
           EM::next_tick {list_blpop(list, &callback)}
           callback.call({}, message)
         end
@@ -225,7 +209,6 @@ module Sensu
 
       def list_subscribe(pipe, &callback)
         list = redis_key("list", pipe)
-        setup_connection(list)
         list_blpop(list, &callback)
       end
     end
