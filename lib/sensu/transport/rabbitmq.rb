@@ -14,7 +14,7 @@ module Sensu
         connect_with_eligible_options
       end
 
-      def reconnect
+      def reconnect(force=false)
         unless @reconnecting
           @reconnecting = true
           @before_reconnect.call

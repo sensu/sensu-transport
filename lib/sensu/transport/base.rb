@@ -48,7 +48,9 @@ module Sensu
       def connect(options={}); end
 
       # Reconnect to the transport.
-      def reconnect; end
+      #
+      # @param force [Boolean] the reconnect.
+      def reconnect(force=false); end
 
       # Indicates if connected to the transport.
       #
