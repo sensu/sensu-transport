@@ -1,4 +1,4 @@
-source 'https://rubygems.org'
+source "https://rubygems.org"
 
-# Specify your gem's dependencies in sensu-spawn.gemspec
+# Specify your gem's dependencies in sensu-transport.gemspec
 gemspec
