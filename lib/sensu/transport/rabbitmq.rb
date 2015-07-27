@@ -3,6 +3,7 @@ gem "amqp", "1.5.0"
 require "amqp"
 
 require File.join(File.dirname(__FILE__), "base")
+require File.join(File.dirname(__FILE__), "patches", "amqp")
 
 module Sensu
   module Transport
