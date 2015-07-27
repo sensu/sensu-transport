@@ -149,9 +149,12 @@ module Sensu
         setup_channel(options)
       end
 
-      def periodically_reconnect
-        timer = EM::PeriodicTimer.new(5) do
+      def periodically_reconnect(delay=1)
+        capped_delay = (delay >= 20 ? 20 : delay)
+        EM::Timer.new(capped_delay) do
           unless connected?
+            reset
+            periodically_reconnect(capped_delay += 3)
             begin
               connect_with_eligible_options do
                 @reconnecting = false
@@ -160,8 +163,6 @@ module Sensu
             rescue EventMachine::ConnectionError
             rescue Java::JavaLang::RuntimeException
             end
-          else
-            timer.cancel
           end
         end
       end
