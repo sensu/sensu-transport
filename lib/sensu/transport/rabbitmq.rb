@@ -149,12 +149,12 @@ module Sensu
         setup_channel(options)
       end
 
-      def periodically_reconnect(delay=1)
+      def periodically_reconnect(delay=2)
         capped_delay = (delay >= 20 ? 20 : delay)
         EM::Timer.new(capped_delay) do
           unless connected?
             reset
-            periodically_reconnect(capped_delay += 3)
+            periodically_reconnect(capped_delay += 2)
             begin
               connect_with_eligible_options do
                 @reconnecting = false
