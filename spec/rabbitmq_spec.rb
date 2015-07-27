@@ -108,12 +108,15 @@ describe "Sensu::Transport::RabbitMQ" do
     end
   end
 
-  it "will throw an error if it cannot resolve a hostname" do
+  it "can call the on_error callback on initial connect if it cannot resolve a hostname" do
     async_wrapper do
+      @transport.on_error do |error|
+        expect(error.to_s).to match(/unable to resolve server address/)
+        async_done
+      end
       expect {
         @transport.connect(:host => "2def33c3-cfbb-4993-b5ee-08d47f6d8793")
-      }.to raise_error
-      async_done
+      }.to_not raise_error
     end
   end
 
