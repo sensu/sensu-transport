@@ -16,6 +16,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency("sensu-em")
+  spec.add_dependency("amq-protocol", "1.9.2")
   spec.add_dependency("amqp", "1.5.0")
   spec.add_dependency("em-redis-unified", ">= 1.0.0")
 
