@@ -150,9 +150,15 @@ describe "Sensu::Transport::Redis" do
 
   it "will throw an error if it cannot resolve a hostname" do
     async_wrapper do
+      expected_error_class = case RUBY_PLATFORM
+      when "java"
+        Java::JavaNioChannels::UnresolvedAddressException
+      else
+        EventMachine::ConnectionError
+      end
       expect {
         @transport.connect(:host => "2def33c3-cfbb-4993-b5ee-08d47f6d8793")
-      }.to raise_error
+      }.to raise_error(expected_error_class)
       async_done
     end
   end

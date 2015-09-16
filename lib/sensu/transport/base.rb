@@ -1,4 +1,4 @@
-gem "sensu-em"
+require "eventmachine"
 
 module Sensu
   module Transport
