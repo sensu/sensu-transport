@@ -15,7 +15,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_dependency("sensu-em")
+  spec.add_dependency("eventmachine")
   spec.add_dependency("amq-protocol", "1.9.2")
   spec.add_dependency("amqp", "1.5.0")
   spec.add_dependency("em-redis-unified", ">= 1.0.0")
@@ -23,6 +23,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bundler", "~> 1.6"
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rspec"
-  spec.add_development_dependency "bouncy-castle-java" if RUBY_PLATFORM =~ /java/
   spec.add_development_dependency "codeclimate-test-reporter" unless RUBY_VERSION < "1.9"
 end
