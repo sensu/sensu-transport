@@ -35,7 +35,7 @@ module Sensu
 
       def publish(exchange_type, exchange_name, message, options={}, &callback)
         begin
-          @channel.method(exchange_type.to_sym).call(exchange_name, options).publish(message) do
+          @channel.method(exchange_type.to_sym).call(exchange_name, options).publish(message, :user_id => @connection.settings[:user]) do
             info = {}
             callback.call(info) if callback
           end
