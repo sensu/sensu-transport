@@ -19,6 +19,7 @@ describe "Sensu::Transport" do
   it "can set the transport logger" do
     async_wrapper do
       logger = Logger.new(STDOUT)
+      logger.level = Logger::ERROR
       Sensu::Transport.logger = logger
       transport = Sensu::Transport.connect("rabbitmq")
       expect(transport.logger).to eq(logger)
