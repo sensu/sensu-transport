@@ -1,10 +1,16 @@
-require "eventmachine"
+gem "concurrent-ruby", "1.0.0"
+
+require "concurrent"
 
 module Sensu
   module Transport
     class Error < StandardError; end
 
     class Base
+      # Use concurrent-ruby async mixin, turning the transport API
+      # into a simple actor.
+      include Concurrent::Async
+
       # @!attribute [rw] logger
       #   @return [Logger] the Sensu logger object.
       attr_accessor :logger
@@ -71,7 +77,7 @@ module Sensu
       # @param options [Hash] the options to publish the message with.
       # @yield [info] passes publish info to an optional callback/block.
       # @yieldparam info [Hash] contains publish information, which
-      #   may contain an error object.
+      #   may contain an error object (:error).
       def publish(type, pipe, message, options={}, &callback)
         info = {:error => nil}
         callback.call(info) if callback
@@ -121,6 +127,7 @@ module Sensu
       #
       # @param funnel [String] the transport funnel to get stats for.
       # @param options [Hash] the options to get funnel stats with.
+      # @yield [info] passes funnel stats to the callback/block.
       def stats(funnel, options={}, &callback)
         info = {}
         callback.call(info)
@@ -130,6 +137,21 @@ module Sensu
       def self.descendants
         ObjectSpace.each_object(Class).select do |klass|
           klass < self
+        end
+      end
+
+      private
+
+      # Catch transport errors and call the on_error callback,
+      # providing it with the error object as an argument.
+      #
+      # @param block [Proc] called within a rescue block to catch
+      #   transport errors.
+      def catch_errors(&block)
+        begin
+          block.call
+        rescue => error
+          @on_error.call(error)
         end
       end
     end

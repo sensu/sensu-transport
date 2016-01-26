@@ -7,6 +7,9 @@ describe "Sensu::Transport::RabbitMQ" do
 
   before do
     @transport = Sensu::Transport::RabbitMQ.new
+    @transport.on_error do |error|
+      puts "ERROR: #{error}"
+    end
     @transport.logger = Logger.new(STDOUT)
     @transport.logger.level = Logger::FATAL
   end
@@ -21,16 +24,16 @@ describe "Sensu::Transport::RabbitMQ" do
   it "can publish and subscribe" do
     async_wrapper do
       @transport.connect
-      callback = Proc.new do |message|
+      callback = Proc.new do |info, message|
         expect(message).to eq("msg")
         timer(0.5) do
           async_done
         end
       end
-      @transport.subscribe("direct", "foo", "baz", {}, &callback)
-      @transport.subscribe("direct", "bar", "baz", {}, &callback)
+      @transport.async.subscribe("direct", "foo", "baz", {}, &callback)
+      @transport.async.subscribe("direct", "bar", "baz", {}, &callback)
       timer(1) do
-        @transport.publish("direct", "foo", "msg") do |info|
+        @transport.async.publish("direct", "foo", "msg") do |info|
           expect(info).to be_kind_of(Hash)
           expect(info).to be_empty
         end
@@ -41,11 +44,11 @@ describe "Sensu::Transport::RabbitMQ" do
   it "can unsubscribe from queues and close the connection" do
     async_wrapper do
       @transport.connect
-      @transport.subscribe("direct", "bar") do |info, message|
+      @transport.async.subscribe("direct", "bar") do |info, message|
         true
       end
       timer(1) do
-        @transport.unsubscribe do
+        @transport.async.unsubscribe do
           @transport.close
           expect(@transport.connected?).to be(false)
           async_done
@@ -72,15 +75,15 @@ describe "Sensu::Transport::RabbitMQ" do
   it "can acknowledge the delivery of a message" do
     async_wrapper do
       @transport.connect
-      @transport.subscribe("direct", "foo", "", :ack => true) do |info, message|
-        @transport.acknowledge(info) do
+      @transport.async.subscribe("direct", "foo", "", :ack => true) do |info, message|
+        @transport.async.acknowledge(info) do
           timer(0.5) do
             async_done
           end
         end
       end
       timer(1) do
-        @transport.publish("direct", "foo", "msg") do |info|
+        @transport.async.publish("direct", "foo", "msg") do |info|
           expect(info).to be_kind_of(Hash)
           expect(info).to be_empty
         end
@@ -91,7 +94,7 @@ describe "Sensu::Transport::RabbitMQ" do
   it "can get queue stats, message and consumer counts" do
     async_wrapper do
       @transport.connect
-      @transport.stats("bar") do |info|
+      @transport.async.stats("bar") do |info|
         expect(info).to be_kind_of(Hash)
         expect(info[:messages]).to eq(0)
         expect(info[:consumers]).to eq(0)
@@ -102,6 +105,9 @@ describe "Sensu::Transport::RabbitMQ" do
 
   it "can fail to connect" do
     async_wrapper do
+      @transport.on_error do |error|
+        # no-op
+      end
       @transport.connect(:port => 5555)
       expect(@transport.connected?).to be(false)
       async_done
@@ -110,16 +116,11 @@ describe "Sensu::Transport::RabbitMQ" do
 
   it "will throw an error if it cannot resolve a hostname" do
     async_wrapper do
-      expected_error_class = case RUBY_PLATFORM
-      when "java"
-        Java::JavaNioChannels::UnresolvedAddressException
-      else
-        EventMachine::ConnectionError
+      @transport.on_error do |error|
+        expect(error).to be_kind_of(Bunny::TCPConnectionFailedForAllHosts)
+        async_done
       end
-      expect {
-        @transport.connect(:host => "2def33c3-cfbb-4993-b5ee-08d47f6d8793")
-      }.to raise_error(expected_error_class)
-      async_done
+      @transport.connect(:host => "2def33c3-cfbb-4993-b5ee-08d47f6d8793")
     end
   end
 
