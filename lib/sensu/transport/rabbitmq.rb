@@ -8,6 +8,9 @@ require File.join(File.dirname(__FILE__), "patches", "amqp")
 module Sensu
   module Transport
     class RabbitMQ < Base
+      # RabbitMQ connection setup.
+      #
+      # @param options [Hash, String]
       def connect(options={})
         reset
         set_connection_options(options)
@@ -15,6 +18,9 @@ module Sensu
         connect_with_eligible_options
       end
 
+      # Reconnect to RabbitMQ.
+      #
+      # @param force [Boolean] the reconnect.
       def reconnect(force=false)
         unless @reconnecting
           @reconnecting = true
@@ -24,69 +30,129 @@ module Sensu
         end
       end
 
+      # Indicates if connected to RabbitMQ.
+      #
+      # @return [TrueClass, FalseClass]
       def connected?
         @connection.connected?
       end
 
+      # Close the RabbitMQ connection.
       def close
         callback = Proc.new { @connection.close }
         connected? ? callback.call : EM.next_tick(callback)
       end
 
-      def publish(exchange_type, exchange_name, message, options={}, &callback)
-        begin
-          @channel.method(exchange_type.to_sym).call(exchange_name, options).publish(message) do
+      # Publish a message to RabbitMQ.
+      #
+      # @param type [Symbol] the RabbitMQ exchange type, possible
+      #   values are: :direct and :fanout.
+      # @param pipe [String] the RabbitMQ exchange name.
+      # @param message [String] the message to be published to
+      #   RabbitMQ.
+      # @param options [Hash] the options to publish the message with.
+      # @yield [info] passes publish info to an optional
+      #   callback/block.
+      # @yieldparam info [Hash] contains publish information.
+      def publish(type, pipe, message, options={}, &callback)
+        catch_errors do
+          @channel.method(type.to_sym).call(pipe, options).publish(message) do
             info = {}
             callback.call(info) if callback
           end
-        rescue => error
-          info = {:error => error}
-          callback.call(info) if callback
         end
       end
 
-      def subscribe(exchange_type, exchange_name, queue_name="", options={}, &callback)
-        previously_declared = @queues.has_key?(queue_name)
-        @queues[queue_name] ||= @channel.queue!(queue_name, :auto_delete => true)
-        queue = @queues[queue_name]
-        queue.bind(@channel.method(exchange_type.to_sym).call(exchange_name))
-        unless previously_declared
-          queue.subscribe(options, &callback)
-        end
-      end
-
-      def unsubscribe(&callback)
-        @queues.values.each do |queue|
-          if connected?
-            queue.unsubscribe
-          else
-            queue.before_recovery do
-              queue.unsubscribe
-            end
+      # Subscribe to a RabbitMQ queue.
+      #
+      # @param type [Symbol] the RabbitMQ exchange type, possible
+      #   values are: :direct and :fanout.
+      # @param pipe [String] the RabbitMQ exhange name.
+      # @param funnel [String] the RabbitMQ queue.
+      # @param options [Hash] the options to consume messages with.
+      # @yield [info, message] passes message info and content to the
+      #   consumer callback/block.
+      # @yieldparam info [Hash] contains message information.
+      # @yieldparam message [String] message.
+      def subscribe(type, pipe, funnel="", options={}, &callback)
+        catch_errors do
+          previously_declared = @queues.has_key?(funnel)
+          @queues[funnel] ||= @channel.queue!(funnel, :auto_delete => true)
+          queue = @queues[funnel]
+          queue.bind(@channel.method(type.to_sym).call(pipe))
+          unless previously_declared
+            queue.subscribe(options, &callback)
           end
         end
-        @queues = {}
-        @channel.recover if connected?
+      end
+
+      # Unsubscribe from all RabbitMQ queues.
+      #
+      # @yield [info] passes info to an optional callback/block.
+      # @yieldparam info [Hash] contains unsubscribe information.
+      def unsubscribe(&callback)
+        catch_errors do
+          @queues.values.each do |queue|
+            if connected?
+              queue.unsubscribe
+            else
+              queue.before_recovery do
+                queue.unsubscribe
+              end
+            end
+          end
+          @queues = {}
+          @channel.recover if connected?
+        end
         super
       end
 
+      # Acknowledge the delivery of a message from RabbitMQ.
+      #
+      # @param info [Hash] message info containing its delivery tag.
+      # @yield [info] passes acknowledgment info to an optional
+      #   callback/block.
       def acknowledge(info, &callback)
-        info.ack
+        catch_errors do
+          info.ack
+        end
         callback.call(info) if callback
       end
 
-      def stats(queue_name, options={}, &callback)
-        options = options.merge(:auto_delete => true)
-        @channel.queue(queue_name, options).status do |messages, consumers|
-          info = {
-            :messages => messages,
-            :consumers => consumers
-          }
-          callback.call(info)
+      # RabbitMQ queue stats, including message and consumer counts.
+      #
+      # @param funnel [String] the RabbitMQ queue to get stats for.
+      # @param options [Hash] the options to get queue stats with.
+      # @yield [info] passes queue stats to the callback/block.
+      def stats(funnel, options={}, &callback)
+        catch_errors do
+          options = options.merge(:auto_delete => true)
+          @channel.queue(funnel, options).status do |messages, consumers|
+            info = {
+              :messages => messages,
+              :consumers => consumers
+            }
+            callback.call(info)
+          end
         end
       end
 
       private
+
+      # Catch RabbitMQ errors and call the on_error callback,
+      # providing it with the error object as an argument. This method
+      # is intended to be applied where necessary, not to be confused
+      # with a catch-all.
+      #
+      # @param block [Proc] called within a rescue block to
+      #   catch RabbitMQ errors.
+      def catch_errors(&block)
+        begin
+          block.call
+        rescue AMQP => error
+          @on_error.call(error)
+        end
+      end
 
       def reset
         @queues = {}
