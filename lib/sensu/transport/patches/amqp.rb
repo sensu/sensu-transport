@@ -1,7 +1,7 @@
 module AMQP
   class Session
     def send_heartbeat
-      if tcp_connection_established? && !reconnecting?
+      if tcp_connection_established? && !reconnecting? && !closed?
         send_frame(AMQ::Protocol::HeartbeatFrame)
         if !@handling_skipped_heartbeats && @last_server_heartbeat
           if @last_server_heartbeat < (Time.now - (self.heartbeat_interval * 2))
