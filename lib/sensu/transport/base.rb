@@ -71,7 +71,7 @@ module Sensu
       # @param options [Hash] the options to publish the message with.
       # @yield [info] passes publish info to an optional callback/block.
       # @yieldparam info [Hash] contains publish information, which
-      #   may contain an error object.
+      #   may contain an error object (:error).
       def publish(type, pipe, message, options={}, &callback)
         info = {:error => nil}
         callback.call(info) if callback
@@ -130,6 +130,23 @@ module Sensu
       def self.descendants
         ObjectSpace.each_object(Class).select do |klass|
           klass < self
+        end
+      end
+
+      private
+
+      # Catch transport errors and call the on_error callback,
+      # providing it with the error object as an argument. This method
+      # is intended to be applied where necessary, not to be confused
+      # with a catch-all. Not all transports will need this.
+      #
+      # @param block [Proc] called within a rescue block to
+      # catch transport errors.
+      def catch_errors(&block)
+        begin
+          block.call
+        rescue => error
+          @on_error.call(error)
         end
       end
     end
