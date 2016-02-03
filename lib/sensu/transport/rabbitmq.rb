@@ -149,7 +149,7 @@ module Sensu
       def catch_errors(&block)
         begin
           block.call
-        rescue AMQP => error
+        rescue AMQP::Error => error
           @on_error.call(error)
         end
       end
