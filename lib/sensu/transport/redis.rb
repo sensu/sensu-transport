@@ -289,7 +289,7 @@ module Sensu
       # @yieldparam message [String] message content.
       def list_blpop(list, &callback)
         redis_connection(list).blpop(list, 0) do |_, message|
-          EM::next_tick {list_blpop(list, &callback)}
+          EM::next_tick { list_blpop(list, &callback) }
           callback.call({}, message)
         end
       end

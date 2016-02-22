@@ -92,7 +92,7 @@ module Sensu
       def subscribe(type, pipe, funnel=nil, options={})
         info = {}
         message = ''
-        yield(info, message) if block_given?
+        yield(info, message)
       end
 
       # Unsubscribe from all transport pipes and/or funnels.
