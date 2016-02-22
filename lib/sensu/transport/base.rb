@@ -72,9 +72,9 @@ module Sensu
       # @yield [info] passes publish info to an optional callback/block.
       # @yieldparam info [Hash] contains publish information, which
       #   may contain an error object (:error).
-      def publish(type, pipe, message, options={}, &callback)
+      def publish(type, pipe, message, options={})
         info = {:error => nil}
-        callback.call(info) if callback
+        yield(info) if block_given?
       end
 
       # Subscribe to a transport pipe and/or funnel.
@@ -89,30 +89,31 @@ module Sensu
       #   the consumer callback/block.
       # @yieldparam info [Hash] contains message information.
       # @yieldparam message [String] message.
-      def subscribe(type, pipe, funnel=nil, options={}, &callback)
+      def subscribe(type, pipe, funnel=nil, options={})
         info = {}
         message = ''
-        callback.call(info, message)
+        yield(info, message)
       end
 
       # Unsubscribe from all transport pipes and/or funnels.
       #
       # @yield [info] passes info to an optional callback/block.
       # @yieldparam info [Hash] contains unsubscribe information.
-      def unsubscribe(&callback)
+      def unsubscribe
         info = {}
-        callback.call(info) if callback
+        yield(info) if block_given?
       end
 
       # Acknowledge the delivery of a message from the transport.
       #
       # @param info [Hash] message information, eg. contains its id.
       # @yield [info] passes acknowledgment info to an optional callback/block.
-      def acknowledge(info, &callback)
-        callback.call(info) if callback
+      def acknowledge(info)
+        yield(info) if block_given?
       end
 
-      # Alias for acknowledge()
+      # Alias for acknowledge(). This should be superseded by a proper
+      # alias via alias_method in the transport class.
       def ack(*args, &callback)
         acknowledge(*args, &callback)
       end
@@ -121,9 +122,11 @@ module Sensu
       #
       # @param funnel [String] the transport funnel to get stats for.
       # @param options [Hash] the options to get funnel stats with.
-      def stats(funnel, options={}, &callback)
+      # @yield [info] passes funnel stats a callback/block.
+      # @yieldparam info [Hash] contains funnel stats.
+      def stats(funnel, options={})
         info = {}
-        callback.call(info)
+        yield(info) if block_given?
       end
 
       # Discover available transports (Subclasses)
@@ -140,11 +143,11 @@ module Sensu
       # is intended to be applied where necessary, not to be confused
       # with a catch-all. Not all transports will need this.
       #
-      # @param block [Proc] called within a rescue block to
-      # catch transport errors.
-      def catch_errors(&block)
+      # @yield [] callback/block to execute within a rescue block to
+      #   catch transport errors.
+      def catch_errors
         begin
-          block.call
+          yield
         rescue => error
           @on_error.call(error)
         end
