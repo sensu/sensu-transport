@@ -54,11 +54,11 @@ module Sensu
       # @yield [info] passes publish info to an optional
       #   callback/block.
       # @yieldparam info [Hash] contains publish information.
-      def publish(type, pipe, message, options={}, &callback)
+      def publish(type, pipe, message, options={})
         catch_errors do
           @channel.method(type.to_sym).call(pipe, options).publish(message) do
             info = {}
-            callback.call(info) if callback
+            yield(info) if block_given?
           end
         end
       end
@@ -90,7 +90,7 @@ module Sensu
       #
       # @yield [info] passes info to an optional callback/block.
       # @yieldparam info [Hash] contains unsubscribe information.
-      def unsubscribe(&callback)
+      def unsubscribe
         catch_errors do
           @queues.values.each do |queue|
             if connected?
@@ -112,19 +112,23 @@ module Sensu
       # @param info [Hash] message info containing its delivery tag.
       # @yield [info] passes acknowledgment info to an optional
       #   callback/block.
-      def acknowledge(info, &callback)
+      def acknowledge(info)
         catch_errors do
           info.ack
         end
-        callback.call(info) if callback
+        super
       end
+
+      # A proper alias for acknowledge().
+      alias_method :ack, :acknowledge
 
       # RabbitMQ queue stats, including message and consumer counts.
       #
       # @param funnel [String] the RabbitMQ queue to get stats for.
       # @param options [Hash] the options to get queue stats with.
       # @yield [info] passes queue stats to the callback/block.
-      def stats(funnel, options={}, &callback)
+      # @yieldparam info [Hash] contains queue stats.
+      def stats(funnel, options={})
         catch_errors do
           options = options.merge(:auto_delete => true)
           @channel.queue(funnel, options).status do |messages, consumers|
@@ -132,7 +136,7 @@ module Sensu
               :messages => messages,
               :consumers => consumers
             }
-            callback.call(info)
+            yield(info)
           end
         end
       end
@@ -144,11 +148,11 @@ module Sensu
       # is intended to be applied where necessary, not to be confused
       # with a catch-all.
       #
-      # @param block [Proc] called within a rescue block to
+      # @yield [] callback/block to execute within a rescue block to
       #   catch RabbitMQ errors.
-      def catch_errors(&block)
+      def catch_errors
         begin
-          block.call
+          yield
         rescue AMQP::Error => error
           @on_error.call(error)
         end
@@ -177,11 +181,8 @@ module Sensu
         @eligible_options.shift
       end
 
-      def reconnect_callback
-        Proc.new { reconnect }
-      end
-
-      def setup_connection(options={}, &callback)
+      def setup_connection(options={})
+        reconnect_callback = Proc.new { reconnect }
         @connection = AMQP.connect(options, {
           :on_tcp_connection_failure => reconnect_callback,
           :on_possible_authentication_failure => reconnect_callback
@@ -189,7 +190,7 @@ module Sensu
         @connection.logger = @logger
         @connection.on_open do
           @connection_timeout.cancel
-          callback.call if callback
+          yield if block_given?
         end
         @connection.on_tcp_connection_loss(&reconnect_callback)
         @connection.on_skipped_heartbeats(&reconnect_callback)

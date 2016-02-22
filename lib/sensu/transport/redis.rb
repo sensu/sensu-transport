@@ -112,7 +112,7 @@ module Sensu
       #
       # @yield [info] passes info to an optional callback/block.
       # @yieldparam info [Hash] empty hash.
-      def unsubscribe(&callback)
+      def unsubscribe
         @connections.each do |name, connection|
           case name
           when "pubsub"
@@ -131,13 +131,15 @@ module Sensu
       #
       # @param funnel [String] the transport funnel to get stats for.
       # @param options [Hash] IGNORED by this transport.
-      def stats(funnel, options={}, &callback)
+      # @yield [info] passes list stats to the callback/block.
+      # @yieldparam info [Hash] contains list stats.
+      def stats(funnel, options={})
         redis_connection("redis").llen(funnel) do |messages|
           info = {
             :messages => messages,
             :consumers => 0
           }
-          callback.call(info)
+          yield(info)
         end
       end
 
@@ -215,11 +217,11 @@ module Sensu
       # @yield [info] passes publish info to an optional callback/block.
       # @yieldparam info [Hash] contains publish information.
       # @yieldparam subscribers [String] current subscriber count.
-      def pubsub_publish(pipe, message, &callback)
+      def pubsub_publish(pipe, message)
         channel = redis_key("channel", pipe)
         redis_connection("redis").publish(channel, message) do |subscribers|
           info = {:subscribers => subscribers}
-          callback.call(info) if callback
+          yield(info) if block_given?
         end
       end
 
@@ -240,7 +242,7 @@ module Sensu
       #   the consumer/method callback/block.
       # @yieldparam info [Hash] contains the channel name.
       # @yieldparam message [String] message content.
-      def pubsub_subscribe(pipe, &callback)
+      def pubsub_subscribe(pipe)
         channel = redis_key("channel", pipe)
         redis_connection("pubsub").subscribe(channel) do |type, channel, message|
           case type
@@ -250,7 +252,7 @@ module Sensu
             @logger.debug("unsubscribed from redis channel: #{channel}") if @logger
           when "message"
             info = {:channel => channel}
-            callback.call(info, message)
+            yield(info, message)
           end
         end
       end
@@ -265,11 +267,11 @@ module Sensu
       # @yield [info] passes publish info to an optional callback/block.
       # @yieldparam info [Hash] contains publish information.
       # @yieldparam queued [String] current list size.
-      def list_publish(pipe, message, &callback)
+      def list_publish(pipe, message)
         list = redis_key("list", pipe)
         redis_connection("redis").rpush(list, message) do |queued|
           info = {:queued => queued}
-          callback.call(info) if callback
+          yield(info) if block_given?
         end
       end
 
