@@ -5,6 +5,11 @@ module Sensu
     class Error < StandardError; end
 
     class Base
+      # Transports are deferrable objects. This is to enable callbacks
+      # to be called in the event the transport calls `succeed()` to
+      # indicate that it has initialized and connected successfully.
+      include EM::Deferrable
+
       # @!attribute [rw] logger
       #   @return [Logger] the Sensu logger object.
       attr_accessor :logger

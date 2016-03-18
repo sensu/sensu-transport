@@ -12,6 +12,8 @@ module Sensu
       #
       # @param transport_name [String] transport name.
       # @param options [Hash] transport options.
+      # @yield [Object] passes initialized and connected connection
+      #   object to the callback/block.
       def connect(transport_name, options={})
         require("sensu/transport/#{transport_name}")
         klass = Base.descendants.detect do |klass|
@@ -20,7 +22,9 @@ module Sensu
         transport = klass.new
         transport.logger = @logger
         transport.connect(options)
-        transport
+        transport.callback do
+          yield(transport)
+        end
       end
     end
   end
