@@ -8,7 +8,9 @@ require File.join(File.dirname(__FILE__), "patches", "amqp")
 module Sensu
   module Transport
     class RabbitMQ < Base
-      # RabbitMQ connection setup.
+      # RabbitMQ connection setup. The deferred status is set to
+      # `:succeeded` (via `succeed()`) once the connection has been
+      # established.
       #
       # @param options [Hash, String]
       def connect(options={})

@@ -14,8 +14,9 @@ module Sensu
         super
       end
 
-      # Redis transport connection setup. This method sets `@options`
-      # and creates a named Redis connection "redis".
+      # Redis transport connection setup. This method sets `@options`,
+      # creates a named Redis connection "redis", and sets the deferred
+      # status to `:succeeded` via `succeed()`.
       #
       # @param options [Hash, String]
       def connect(options={})
