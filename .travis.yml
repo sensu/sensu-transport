@@ -1,12 +1,12 @@
 sudo: false
 language: ruby
 rvm:
-  - 1.8.7
-  - 1.9.2
-  - 1.9.3
   - 2.0.0
   - 2.1.0
-  - jruby-1.7.18
+  - 2.2.0
+  - 2.2.3
+  - 2.3.0
+  - jruby-1.7.23
 services:
   - rabbitmq
   - redis
