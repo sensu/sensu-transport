@@ -190,6 +190,7 @@ module Sensu
         @connection.logger = @logger
         @connection.on_open do
           @connection_timeout.cancel
+          succeed
           yield if block_given?
         end
         @connection.on_tcp_connection_loss(&reconnect_callback)
@@ -200,7 +201,7 @@ module Sensu
         @channel = AMQP::Channel.new(@connection)
         @channel.auto_recovery = true
         @channel.on_error do |channel, channel_close|
-          error = Error.new("rabbitmq channel closed")
+          error = Error.new("rabbitmq channel error")
           @on_error.call(error)
         end
         prefetch = 1
@@ -229,6 +230,7 @@ module Sensu
               end
             rescue EventMachine::ConnectionError
             rescue Java::JavaLang::RuntimeException
+            rescue Java::JavaNioChannels::UnresolvedAddressException
             end
           end
         end

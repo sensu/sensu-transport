@@ -1,11 +1,10 @@
-require "em-redis-unified"
+require "sensu/redis"
 
 require File.join(File.dirname(__FILE__), "base")
 
 module Sensu
   module Transport
     class Redis < Base
-
       # The Redis keyspace to use for the transport.
       REDIS_KEYSPACE = "transport"
 
@@ -21,7 +20,11 @@ module Sensu
       # @param options [Hash, String]
       def connect(options={})
         @options = options || {}
-        redis_connection("redis")
+        redis_connection("redis") do |connection|
+          connection.callback do
+            succeed
+          end
+        end
       end
 
       # Reconnect to the Redis transport. The Redis connections used
@@ -134,12 +137,14 @@ module Sensu
       # @yield [info] passes list stats to the callback/block.
       # @yieldparam info [Hash] contains list stats.
       def stats(funnel, options={})
-        redis_connection("redis").llen(funnel) do |messages|
-          info = {
-            :messages => messages,
-            :consumers => 0
-          }
-          yield(info)
+        redis_connection("redis") do |connection|
+          connection.llen(funnel) do |messages|
+            info = {
+              :messages => messages,
+              :consumers => 0
+            }
+            yield(info)
+          end
         end
       end
 
@@ -178,18 +183,23 @@ module Sensu
       # up the connection and before adding it to the pool.
       #
       # @param name [String] the Redis connection name.
-      # @return [Object]
+      # @yield [Object] passes the named connection object to the
+      #   callback/block.
       def redis_connection(name)
-        return @connections[name] if @connections[name]
-        connection = EM::Protocols::Redis.connect(@options)
-        connection.auto_reconnect = false
-        connection.reconnect_on_error = false
-        connection.on_error do |error|
-          @on_error.call(error)
+        if @connections[name]
+          yield(@connections[name])
+        else
+          Sensu::Redis.connect(@options) do |connection|
+            connection.auto_reconnect = false
+            connection.reconnect_on_error = false
+            connection.on_error do |error|
+              @on_error.call(error)
+            end
+            monitor_connections
+            @connections[name] = connection
+            yield(connection)
+          end
         end
-        monitor_connections
-        @connections[name] = connection
-        connection
       end
 
       # Create a Redis key within the defined Redis keyspace. This
@@ -219,9 +229,11 @@ module Sensu
       # @yieldparam subscribers [String] current subscriber count.
       def pubsub_publish(pipe, message)
         channel = redis_key("channel", pipe)
-        redis_connection("redis").publish(channel, message) do |subscribers|
-          info = {:subscribers => subscribers}
-          yield(info) if block_given?
+        redis_connection("redis") do |connection|
+          connection.publish(channel, message) do |subscribers|
+            info = {:subscribers => subscribers}
+            yield(info) if block_given?
+          end
         end
       end
 
@@ -244,15 +256,17 @@ module Sensu
       # @yieldparam message [String] message content.
       def pubsub_subscribe(pipe)
         channel = redis_key("channel", pipe)
-        redis_connection("pubsub").subscribe(channel) do |type, channel, message|
-          case type
-          when "subscribe"
-            @logger.debug("subscribed to redis channel: #{channel}") if @logger
-          when "unsubscribe"
-            @logger.debug("unsubscribed from redis channel: #{channel}") if @logger
-          when "message"
-            info = {:channel => channel}
-            yield(info, message)
+        redis_connection("pubsub") do |connection|
+          connection.subscribe(channel) do |type, channel, message|
+            case type
+            when "subscribe"
+              @logger.debug("subscribed to redis channel: #{channel}") if @logger
+            when "unsubscribe"
+              @logger.debug("unsubscribed from redis channel: #{channel}") if @logger
+            when "message"
+              info = {:channel => channel}
+              yield(info, message)
+            end
           end
         end
       end
@@ -269,9 +283,11 @@ module Sensu
       # @yieldparam queued [String] current list size.
       def list_publish(pipe, message)
         list = redis_key("list", pipe)
-        redis_connection("redis").rpush(list, message) do |queued|
-          info = {:queued => queued}
-          yield(info) if block_given?
+        redis_connection("redis") do |connection|
+          connection.rpush(list, message) do |queued|
+            info = {:queued => queued}
+            yield(info) if block_given?
+          end
         end
       end
 
@@ -288,9 +304,11 @@ module Sensu
       # @yieldparam info [Hash] an empty hash.
       # @yieldparam message [String] message content.
       def list_blpop(list, &callback)
-        redis_connection(list).blpop(list, 0) do |_, message|
-          EM::next_tick { list_blpop(list, &callback) }
-          callback.call({}, message)
+        redis_connection(list) do |connection|
+          connection.blpop(list, 0) do |_, message|
+            EM::next_tick { list_blpop(list, &callback) }
+            callback.call({}, message)
+          end
         end
       end
 
