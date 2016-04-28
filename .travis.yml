@@ -14,6 +14,3 @@ notifications:
   irc:
     - "irc.freenode.net#sensu"
 script: "bundle exec rspec . --tag ~ssl"
-addons:
-  code_climate:
-    repo_token: 629d024a848e2ebb1b0c0283c2046387c1b8c0d1cfd4d03289bef74a7b875d55
