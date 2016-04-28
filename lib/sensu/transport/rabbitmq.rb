@@ -1,4 +1,4 @@
-gem "amqp", "1.5.0"
+gem "amqp", "1.6.0"
 
 require "amqp"
 
