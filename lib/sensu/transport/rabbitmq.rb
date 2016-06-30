@@ -26,6 +26,7 @@ module Sensu
       def reconnect(force=false)
         unless @reconnecting
           @reconnecting = true
+          @logger.debug("Reconnecting...")
           @before_reconnect.call
           reset
           periodically_reconnect
@@ -185,18 +186,34 @@ module Sensu
 
       def setup_connection(options={})
         reconnect_callback = Proc.new { reconnect }
+        on_possible_auth_failure = Proc.new {
+          @logger.warn("Failed to connect. Possible authentication failure. Wrong credentials?")
+          reconnect
+        }
+        user = options[:user] || "(none)"
+        @logger.debug("Attempting to connect with configured user #{user}")
         @connection = AMQP.connect(options, {
           :on_tcp_connection_failure => reconnect_callback,
-          :on_possible_authentication_failure => reconnect_callback
+          :on_possible_authentication_failure => on_possible_auth_failure
         })
         @connection.logger = @logger
         @connection.on_open do
+          @logger.debug("connection open")
           @connection_timeout.cancel
           succeed
           yield if block_given?
         end
-        @connection.on_tcp_connection_loss(&reconnect_callback)
-        @connection.on_skipped_heartbeats(&reconnect_callback)
+        @connection.on_tcp_connection_loss do
+          @logger.warn("TCP connection lost")
+          reconnect
+        end
+        @connection.on_skipped_heartbeats do
+          @logger.warn("Skipped heartbeats")
+          reconnect
+        end
+        @connection.on_closed do
+          @logger.debug("connection closed")
+        end
       end
 
       def setup_channel(options={})
