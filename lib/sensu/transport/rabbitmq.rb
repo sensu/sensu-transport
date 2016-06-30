@@ -57,11 +57,16 @@ module Sensu
       #   callback/block.
       # @yieldparam info [Hash] contains publish information.
       def publish(type, pipe, message, options={})
-        catch_errors do
-          @channel.method(type.to_sym).call(pipe, options).publish(message) do
-            info = {}
-            yield(info) if block_given?
+        if connected?
+          catch_errors do
+            @channel.method(type.to_sym).call(pipe, options).publish(message) do
+              info = {}
+              yield(info) if block_given?
+            end
           end
+        else
+          info = {:error => "Transport is not connected"}
+          yield(info) if block_given?
         end
       end
 
