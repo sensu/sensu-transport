@@ -187,11 +187,13 @@ module Sensu
       def setup_connection(options={})
         reconnect_callback = Proc.new { reconnect }
         on_possible_auth_failure = Proc.new {
-          @logger.warn("transport connection error", :reason => "possible authentication failure. wrong credentials?")
+          @logger.warn("transport connection error", {
+            :reason => "possible authentication failure. wrong credentials?"),
+            :user => options[:user]
+          })
           reconnect
         }
         user = options[:user] || "(none)"
-        @logger.debug("transport attempting to connect with configured user #{user}")
         @connection = AMQP.connect(options, {
           :on_tcp_connection_failure => reconnect_callback,
           :on_possible_authentication_failure => on_possible_auth_failure
