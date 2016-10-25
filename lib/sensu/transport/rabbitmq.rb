@@ -26,7 +26,7 @@ module Sensu
       def reconnect(force=false)
         unless @reconnecting
           @reconnecting = true
-          @logger.debug("Reconnecting...")
+          @logger.debug("reconnecting...")
           @before_reconnect.call
           reset
           periodically_reconnect
@@ -187,11 +187,11 @@ module Sensu
       def setup_connection(options={})
         reconnect_callback = Proc.new { reconnect }
         on_possible_auth_failure = Proc.new {
-          @logger.warn("transport connection error", :reason => "Possible authentication failure. Wrong credentials?")
+          @logger.warn("transport connection error", :reason => "possible authentication failure. wrong credentials?")
           reconnect
         }
         user = options[:user] || "(none)"
-        @logger.debug("Attempting to connect with configured user #{user}")
+        @logger.debug("attempting to connect with configured user #{user}")
         @connection = AMQP.connect(options, {
           :on_tcp_connection_failure => reconnect_callback,
           :on_possible_authentication_failure => on_possible_auth_failure
@@ -204,11 +204,11 @@ module Sensu
           yield if block_given?
         end
         @connection.on_tcp_connection_loss do
-          @logger.warn("transport connection error", :reason => "TCP connection lost")
+          @logger.warn("transport connection error", :reason => "tcp connection lost")
           reconnect
         end
         @connection.on_skipped_heartbeats do
-          @logger.warn("transport connection error", :reason => "Skipped heartbeats")
+          @logger.warn("transport connection error", :reason => "skipped heartbeats")
           reconnect
         end
         @connection.on_closed do
