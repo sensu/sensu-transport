@@ -188,7 +188,7 @@ module Sensu
         reconnect_callback = Proc.new { reconnect }
         on_possible_auth_failure = Proc.new {
           @logger.warn("transport connection error", {
-            :reason => "possible authentication failure. wrong credentials?"),
+            :reason => "possible authentication failure. wrong credentials?",
             :user => options[:user]
           })
           reconnect
