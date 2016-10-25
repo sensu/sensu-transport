@@ -26,7 +26,7 @@ module Sensu
       def reconnect(force=false)
         unless @reconnecting
           @reconnecting = true
-          @logger.debug("reconnecting...")
+          @logger.debug("transport reconnecting...")
           @before_reconnect.call
           reset
           periodically_reconnect
@@ -191,14 +191,14 @@ module Sensu
           reconnect
         }
         user = options[:user] || "(none)"
-        @logger.debug("attempting to connect with configured user #{user}")
+        @logger.debug("transport attempting to connect with configured user #{user}")
         @connection = AMQP.connect(options, {
           :on_tcp_connection_failure => reconnect_callback,
           :on_possible_authentication_failure => on_possible_auth_failure
         })
         @connection.logger = @logger
         @connection.on_open do
-          @logger.debug("connection open")
+          @logger.debug("transport connection open")
           @connection_timeout.cancel
           succeed
           yield if block_given?
@@ -212,7 +212,7 @@ module Sensu
           reconnect
         end
         @connection.on_closed do
-          @logger.debug("connection closed")
+          @logger.debug("transport connection closed")
         end
       end
 
