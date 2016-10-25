@@ -1,14 +1,13 @@
 require File.join(File.dirname(__FILE__), "helpers")
 require "sensu/transport/redis"
-require "logger"
+require "sensu/logger"
 
 describe "Sensu::Transport::Redis" do
   include Helpers
 
   before do
     @transport = Sensu::Transport::Redis.new
-    @transport.logger = Logger.new(STDOUT)
-    @transport.logger.level = Logger::FATAL
+    @transport.logger = Sensu::Logger.get(:log_level => :fatal)
   end
 
   it "provides a transport API" do
