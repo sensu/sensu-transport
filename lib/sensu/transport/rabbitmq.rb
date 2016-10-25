@@ -187,7 +187,7 @@ module Sensu
       def setup_connection(options={})
         reconnect_callback = Proc.new { reconnect }
         on_possible_auth_failure = Proc.new {
-          @logger.warn("Failed to connect. Possible authentication failure. Wrong credentials?")
+          @logger.warn("transport connection error", :reason => "Possible authentication failure. Wrong credentials?")
           reconnect
         }
         user = options[:user] || "(none)"
@@ -204,11 +204,11 @@ module Sensu
           yield if block_given?
         end
         @connection.on_tcp_connection_loss do
-          @logger.warn("TCP connection lost")
+          @logger.warn("transport connection error", :reason => "TCP connection lost")
           reconnect
         end
         @connection.on_skipped_heartbeats do
-          @logger.warn("Skipped heartbeats")
+          @logger.warn("transport connection error", :reason => "Skipped heartbeats")
           reconnect
         end
         @connection.on_closed do
