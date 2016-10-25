@@ -5,6 +5,10 @@ require "logger"
 describe "Sensu::Transport" do
   include Helpers
 
+  before do
+    Sensu::Transport.logger = Logger.new(STDOUT)
+  end
+
   it "can load and connect to the rabbitmq transport" do
     async_wrapper do
       options = {}
