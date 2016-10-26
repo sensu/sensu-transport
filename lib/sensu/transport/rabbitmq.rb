@@ -193,7 +193,6 @@ module Sensu
           })
           reconnect
         }
-        user = options[:user] || "(none)"
         @connection = AMQP.connect(options, {
           :on_tcp_connection_failure => reconnect_callback,
           :on_possible_authentication_failure => on_possible_auth_failure
