@@ -159,9 +159,14 @@ module Sensu
       def resolve_hostname(host, &callback)
         resolve = Proc.new do
           begin
-            flags = Socket::AI_NUMERICSERV | Socket::AI_ADDRCONFIG
-            info = Socket.getaddrinfo(host, nil, Socket::AF_UNSPEC, nil, nil, flags).first
-            info.nil? ? nil : info[2]
+            info = case RUBY_PLATFORM
+            when "java"
+              Socket.getaddrinfo(host, nil)
+            else
+              flags = Socket::AI_NUMERICSERV | Socket::AI_ADDRCONFIG
+              Socket.getaddrinfo(host, nil, Socket::AF_UNSPEC, nil, nil, flags)
+            end
+            info.first.nil? ? nil : info.first[2]
           rescue => error
             @logger.error("transport connection error", {
               :reason => "unable to resolve hostname",
