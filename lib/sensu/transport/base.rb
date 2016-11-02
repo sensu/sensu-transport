@@ -1,6 +1,7 @@
 require "eventmachine"
 require "resolv"
 require "ipaddr"
+require "socket"
 
 module Sensu
   module Transport
@@ -167,7 +168,13 @@ module Sensu
             dns.each_resource(host, Resolv::DNS::Resource::IN::AAAA) do |resource|
               ip_addresses << resource.address.to_s
             end
-            ip_addresses.shift
+            ip_address = ip_addresses.shift
+            if ip_address.nil?
+              info = Socket.getaddrinfo(host, nil).first
+              info.nil? ? nil : info[2]
+            else
+              ip_address
+            end
           rescue => error
             @logger.error("transport connection error", {
               :reason => "unable to resolve hostname",
