@@ -17,6 +17,16 @@ describe "Sensu::Transport::RabbitMQ" do
                                      :acknowledge, :ack, :stats)
   end
 
+  it "can open a connection using a hostname", :dns => true do
+    async_wrapper do
+      @transport.connect(:host => "localhost")
+      timer(1) do
+        expect(@transport.connected?).to be(true)
+        async_done
+      end
+    end
+  end
+
   it "can publish and subscribe" do
     async_wrapper do
       @transport.connect
