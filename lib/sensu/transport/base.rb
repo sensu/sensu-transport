@@ -168,6 +168,7 @@ module Sensu
             end
             info.first.nil? ? nil : info.first[2]
           rescue => error
+            puts error.to_s
             @logger.error("transport connection error", {
               :reason => "unable to resolve hostname",
               :error => error.to_s
