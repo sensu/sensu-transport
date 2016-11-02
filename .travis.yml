@@ -13,4 +13,4 @@ services:
 notifications:
   irc:
     - "irc.freenode.net#sensu"
-script: "cat /etc/hosts && bundle exec rspec . --tag ~ssl ~dns"
+script: "bundle exec rspec . --tag ~ssl --tag ~dns"
