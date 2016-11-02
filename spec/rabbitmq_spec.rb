@@ -37,6 +37,16 @@ describe "Sensu::Transport::RabbitMQ" do
     end
   end
 
+  it "can open a connection using a hostname" do
+    async_wrapper do
+      @transport.connect(:host => "localhost")
+      timer(1) do
+        expect(@transport.connected?).to be(true)
+        async_done
+      end
+    end
+  end
+
   it "can unsubscribe from queues and close the connection" do
     async_wrapper do
       @transport.connect
@@ -107,17 +117,11 @@ describe "Sensu::Transport::RabbitMQ" do
     end
   end
 
-  it "will throw an error if it cannot resolve a hostname" do
+  it "will not throw an error if it cannot resolve a hostname" do
     async_wrapper do
-      expected_error_class = case RUBY_PLATFORM
-      when "java"
-        Java::JavaNioChannels::UnresolvedAddressException
-      else
-        EventMachine::ConnectionError
-      end
       expect {
         @transport.connect(:host => "2def33c3-cfbb-4993-b5ee-08d47f6d8793")
-      }.to raise_error(expected_error_class)
+      }.to_not raise_error
       async_done
     end
   end

@@ -1,4 +1,6 @@
 require "eventmachine"
+require "resolv"
+require "ipaddr"
 
 module Sensu
   module Transport
@@ -132,6 +134,60 @@ module Sensu
       def stats(funnel, options={})
         info = {}
         yield(info) if block_given?
+      end
+
+      # Determine if a host is an IP address (or DNS hostname).
+      #
+      # @param host [String]
+      # @return [TrueClass, FalseClass]
+      def ip_address?(host)
+        begin
+          ip_address = IPAddr.new(host)
+          ip_address.ipv4? || ip_address.ipv6?
+        rescue IPAddr::InvalidAddressError
+          false
+        end
+      end
+
+      # Resolve a hostname to an IP address for a host. This method
+      # will return `nil` to the provided callback when the hostname
+      # cannot be resolved to an IP address.
+      #
+      # @param host [String]
+      # @param callback [Proc] called with the result of the DNS
+      #   query (IP address).
+      def resolve_hostname(host, &callback)
+        resolve = Proc.new do
+          begin
+            dns = Resolv::DNS.new
+            ip_address = dns.getaddress(host)
+            ip_address.to_s
+          rescue => error
+            @logger.error("transport connection error", {
+              :reason => "unable to resolve hostname",
+              :error => error.to_s
+            }) if @logger
+            nil
+          end
+        end
+        EM.defer(resolve, callback)
+      end
+
+      # Resolve a hostname to an IP address for a host. This method
+      # will return the provided host to the provided callback if it
+      # is already an IP address. This method will return `nil` to the
+      # provided callback when the hostname cannot be resolved to an
+      # IP address.
+      #
+      # @param host [String]
+      # @param callback [Proc] called with the result of the DNS
+      #   query (IP address).
+      def resolve_host(host, &callback)
+        if ip_address?(host)
+          yield host
+        else
+          resolve_hostname(host, &callback)
+        end
       end
 
       # Discover available transports (Subclasses)
