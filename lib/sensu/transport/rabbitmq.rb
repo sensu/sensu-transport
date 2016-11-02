@@ -193,6 +193,8 @@ module Sensu
               EM::Timer.new(3) do
                 next_connection_options(&callback)
               end
+            elsif ip_address == "::1"
+              yield options
             else
               yield options.merge(:host => ip_address)
             end
