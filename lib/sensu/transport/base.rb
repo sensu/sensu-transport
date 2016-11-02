@@ -160,8 +160,9 @@ module Sensu
         resolve = Proc.new do
           begin
             dns = Resolv::DNS.new
-            ip_address = dns.getaddress(host)
-            ip_address.to_s
+            ip_addresses = dns.getaddresses(host)
+            ip_address = ip_addresses.shift
+            ip_address.nil? nil : ip_address.to_s
           rescue => error
             @logger.error("transport connection error", {
               :reason => "unable to resolve hostname",
