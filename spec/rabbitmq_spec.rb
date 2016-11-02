@@ -40,7 +40,7 @@ describe "Sensu::Transport::RabbitMQ" do
   it "can open a connection using a hostname" do
     async_wrapper do
       @transport.connect(:host => "localhost")
-      timer(1) do
+      timer(2) do
         expect(@transport.connected?).to be(true)
         async_done
       end
