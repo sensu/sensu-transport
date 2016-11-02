@@ -189,6 +189,7 @@ module Sensu
         options = @eligible_options.shift
         if options.is_a?(Hash) && options[:host]
           resolve_host(options[:host]) do |ip_address|
+            puts "RESOLVED ADDRESS: #{ip_address}"
             if ip_address.nil?
               EM::Timer.new(3) do
                 next_connection_options(&callback)
