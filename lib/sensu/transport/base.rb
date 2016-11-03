@@ -160,11 +160,11 @@ module Sensu
         resolve = Proc.new do
           begin
             info = case RUBY_PLATFORM
-            when "java", /mswin|msys|mingw32/
-              Socket.getaddrinfo(host, nil)
-            else
+            when /linux/
               flags = Socket::AI_NUMERICSERV | Socket::AI_ADDRCONFIG
               Socket.getaddrinfo(host, nil, Socket::AF_UNSPEC, nil, nil, flags)
+            else
+              Socket.getaddrinfo(host, nil)
             end
             info.first.nil? ? nil : info.first[2]
           rescue => error
