@@ -160,7 +160,7 @@ module Sensu
         resolve = Proc.new do
           begin
             info = case RUBY_PLATFORM
-            when "java"
+            when "java", /mswin|msys|mingw32/
               Socket.getaddrinfo(host, nil)
             else
               flags = Socket::AI_NUMERICSERV | Socket::AI_ADDRCONFIG
