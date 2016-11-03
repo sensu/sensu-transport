@@ -268,6 +268,7 @@ module Sensu
                 @after_reconnect.call
               end
             rescue EventMachine::ConnectionError
+            rescue Errno::ECONNREFUSED
             rescue Java::JavaLang::RuntimeException
             rescue Java::JavaNioChannels::UnresolvedAddressException
             end
