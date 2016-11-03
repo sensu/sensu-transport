@@ -170,6 +170,7 @@ module Sensu
           rescue => error
             @logger.error("transport connection error", {
               :reason => "unable to resolve hostname",
+              :host => host,
               :error => error.to_s
             }) if @logger
             nil
