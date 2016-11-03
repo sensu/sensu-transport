@@ -182,11 +182,24 @@ module Sensu
         end
       end
 
-      def next_connection_options
+      def next_connection_options(&callback)
         if @eligible_options.nil? || @eligible_options.empty?
           @eligible_options = @connection_options.shuffle
         end
-        @eligible_options.shift
+        options = @eligible_options.shift
+        if options.is_a?(Hash) && options[:host]
+          resolve_host(options[:host]) do |ip_address|
+            if ip_address.nil?
+              EM::Timer.new(3) do
+                next_connection_options(&callback)
+              end
+            else
+              yield options.merge(:host => ip_address)
+            end
+          end
+        else
+          yield options
+        end
       end
 
       def setup_connection(options={})
@@ -237,9 +250,10 @@ module Sensu
       end
 
       def connect_with_eligible_options(&callback)
-        options = next_connection_options
-        setup_connection(options, &callback)
-        setup_channel(options)
+        next_connection_options do |options|
+          setup_connection(options, &callback)
+          setup_channel(options)
+        end
       end
 
       def periodically_reconnect(delay=2)
