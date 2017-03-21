@@ -11,6 +11,7 @@ module Helpers
 
   def async_wrapper(&callback)
     EM.run do
+      EM.defer(Proc.new {}, Proc.new {}) if RUBY_PLATFORM == "java"
       timer(10) do
         raise "test timed out"
       end
