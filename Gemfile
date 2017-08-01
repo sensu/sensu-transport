@@ -5,5 +5,5 @@ gemspec
 
 group :development do
   gem 'github_changelog_generator'
-  gem 'activerecord', '< 5.0'
+  gem 'activesupport', '< 5.0'
 end
