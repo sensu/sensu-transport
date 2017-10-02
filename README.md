@@ -20,13 +20,14 @@ This library provides the transport Base class, its documentation can be found
 [here](http://rubydoc.info/github/sensu/sensu-transport/Sensu/Transport/Base).
 The RabbitMQ transport is also included, providing an example while
 continuing to be the primary Sensu transport, supported by the
-community and [Heavy Water Operations](http://hw-ops.com).
+community and [Sensu Inc.](https://sensuapp.org).
 
 ## Contributing
 
 Please do not submit a pull request to add an additional transport to
 this library.
 
+0. By contributing to this project you agree to abide by the [code of conduct](https://sensuapp.org/conduct).
 1. [Fork it](https://github.com/sensu/sensu-transport/fork)
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
