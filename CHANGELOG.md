@@ -4,8 +4,24 @@
 
 [Full Changelog](https://github.com/sensu/sensu-transport/compare/v7.0.2...HEAD)
 
+**Closed issues:**
+
+- Investigate API logging [\#55](https://github.com/sensu/sensu-transport/issues/55)
+- Automate a CHANGELOG [\#50](https://github.com/sensu/sensu-transport/issues/50)
+- Sensu client hangs with "Detected missing amqp heartbeats" [\#49](https://github.com/sensu/sensu-transport/issues/49)
+- Support for Kafka [\#40](https://github.com/sensu/sensu-transport/issues/40)
+- Handle/flush cached DNS entries before reconnect [\#39](https://github.com/sensu/sensu-transport/issues/39)
+- Keepalive queue backs up while results continue to be processed [\#38](https://github.com/sensu/sensu-transport/issues/38)
+- Rescue EventMachine::ConnectionError not working [\#35](https://github.com/sensu/sensu-transport/issues/35)
+- Add support for using a Redis "namespace" option to the Redis library [\#28](https://github.com/sensu/sensu-transport/issues/28)
+- sensu-server fails silently with redis 2.8.23, the default version used by AWS elasticache [\#20](https://github.com/sensu/sensu-transport/issues/20)
+- SSLV3 disabled on rabbmitmq causes TLS connection to fail [\#4](https://github.com/sensu/sensu-transport/issues/4)
+
 **Merged pull requests:**
 
+- Sign the sensu-transport Ruby gem [\#56](https://github.com/sensu/sensu-transport/pull/56) ([portertech](https://github.com/portertech))
+- update maintainers and reference code of conduct in readme [\#52](https://github.com/sensu/sensu-transport/pull/52) ([cwjohnston](https://github.com/cwjohnston))
+- Implement automated changelog generation [\#51](https://github.com/sensu/sensu-transport/pull/51) ([cwjohnston](https://github.com/cwjohnston))
 - Add ruby 2.4.0 to .travis.yml [\#46](https://github.com/sensu/sensu-transport/pull/46) ([cwjohnston](https://github.com/cwjohnston))
 - remove codeclimate, update redis spec to fix the build [\#45](https://github.com/sensu/sensu-transport/pull/45) ([cwjohnston](https://github.com/cwjohnston))
 
@@ -18,6 +34,12 @@
 ## [v7.0.0](https://github.com/sensu/sensu-transport/tree/v7.0.0) (2016-11-03)
 [Full Changelog](https://github.com/sensu/sensu-transport/compare/v6.0.1...v7.0.0)
 
+**Closed issues:**
+
+- Check results silently dropped when the transport is down [\#32](https://github.com/sensu/sensu-transport/issues/32)
+- Transport should log connection failure error [\#30](https://github.com/sensu/sensu-transport/issues/30)
+- Provide failover support using AMQP::Session: reconnect\_to method [\#13](https://github.com/sensu/sensu-transport/issues/13)
+
 **Merged pull requests:**
 
 - Implement Transport Base API hostname resolution methods [\#42](https://github.com/sensu/sensu-transport/pull/42) ([portertech](https://github.com/portertech))
@@ -26,6 +48,10 @@
 
 ## [v6.0.1](https://github.com/sensu/sensu-transport/tree/v6.0.1) (2016-09-12)
 [Full Changelog](https://github.com/sensu/sensu-transport/compare/v6.0.0...v6.0.1)
+
+**Closed issues:**
+
+- Add support of AWS SQS [\#22](https://github.com/sensu/sensu-transport/issues/22)
 
 **Merged pull requests:**
 
@@ -47,6 +73,10 @@
 
 ## [v4.0.0](https://github.com/sensu/sensu-transport/tree/v4.0.0) (2016-02-22)
 [Full Changelog](https://github.com/sensu/sensu-transport/compare/v3.3.0...v4.0.0)
+
+**Closed issues:**
+
+- Redis transport authentication [\#19](https://github.com/sensu/sensu-transport/issues/19)
 
 **Merged pull requests:**
 
@@ -83,6 +113,10 @@
 
 ## [v3.0.0](https://github.com/sensu/sensu-transport/tree/v3.0.0) (2015-05-20)
 [Full Changelog](https://github.com/sensu/sensu-transport/compare/v2.4.0...v3.0.0)
+
+**Closed issues:**
+
+- Switch from amqp to bunny [\#3](https://github.com/sensu/sensu-transport/issues/3)
 
 **Merged pull requests:**
 
