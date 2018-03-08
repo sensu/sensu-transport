@@ -4,7 +4,7 @@ Gem::Specification.new do |spec|
   spec.name          = "sensu-transport"
   spec.version       = "7.0.2"
   spec.authors       = ["Sean Porter"]
-  spec.email         = ["portertech@gmail.com"]
+  spec.email         = ["portertech@gmail.com", "engineering@sensu.io"]
   spec.summary       = "The Sensu transport abstraction library"
   spec.description   = "The Sensu transport abstraction library"
   spec.homepage      = "https://github.com/sensu/sensu-transport"
@@ -24,4 +24,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "sensu-logger"
+
+  spec.cert_chain    = ["certs/sensu.pem"]
+  spec.signing_key   = File.expand_path("~/.ssh/gem-sensu-private_key.pem") if $0 =~ /gem\z/
 end
