@@ -1,8 +1,7 @@
 # Change Log
 
-## [Unreleased](https://github.com/sensu/sensu-transport/tree/HEAD)
-
-[Full Changelog](https://github.com/sensu/sensu-transport/compare/v7.0.3...HEAD)
+## [v7.1.0](https://github.com/sensu/sensu-transport/tree/v7.1.0) (2018-03-09)
+[Full Changelog](https://github.com/sensu/sensu-transport/compare/v7.0.3...v7.1.0)
 
 **Merged pull requests:**
 
