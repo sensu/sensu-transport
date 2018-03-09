@@ -8,4 +8,6 @@ rvm:
 services:
   - rabbitmq
   - redis
+before_install:
+  - gem install bundler --version 1.15.1
 script: "bundle exec rspec . --tag ~ssl"

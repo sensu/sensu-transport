@@ -87,7 +87,7 @@ module Sensu
           previously_declared = @queues.has_key?(funnel)
           @queues[funnel] ||= @channel.queue!(funnel, :auto_delete => true)
           queue = @queues[funnel]
-          queue.bind(@channel.method(type.to_sym).call(pipe))
+          queue.bind(@channel.method(type.to_sym).call(pipe, :auto_delete => true))
           unless previously_declared
             queue.subscribe(options, &callback)
           end
