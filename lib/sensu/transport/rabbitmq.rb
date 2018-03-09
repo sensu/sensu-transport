@@ -37,7 +37,7 @@ module Sensu
       #
       # @return [TrueClass, FalseClass]
       def connected?
-        @connection.connected?
+        @connection && @connection.connected?
       end
 
       # Close the RabbitMQ connection.
@@ -190,9 +190,7 @@ module Sensu
         if options.is_a?(Hash) && options[:host]
           resolve_host(options[:host]) do |ip_address|
             if ip_address.nil?
-              EM::Timer.new(3) do
-                next_connection_options(&callback)
-              end
+              reconnect
             else
               yield options.merge(:host => ip_address)
             end
