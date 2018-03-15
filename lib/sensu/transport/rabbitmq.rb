@@ -84,8 +84,15 @@ module Sensu
       # @yieldparam message [String] message.
       def subscribe(type, pipe, funnel="", options={}, &callback)
         catch_errors do
+          case @connection_options
+            when Hash
+              options = options.merge(:auto_delete => @connection_options.fetch(:auto_delete, true))
+            when Array
+              options = options.merge(:auto_delete => @connection_options.at(0).fetch(:auto_delete, true))
+          end
+
           previously_declared = @queues.has_key?(funnel)
-          @queues[funnel] ||= @channel.queue!(funnel, :auto_delete => true)
+          @queues[funnel] ||= @channel.queue!(funnel, options)
           queue = @queues[funnel]
           queue.bind(@channel.method(type.to_sym).call(pipe))
           unless previously_declared
@@ -138,7 +145,13 @@ module Sensu
       # @yieldparam info [Hash] contains queue stats.
       def stats(funnel, options={})
         catch_errors do
-          options = options.merge(:auto_delete => true)
+          case @connection_options
+            when Hash
+              options = options.merge(:auto_delete => @connection_options.fetch(:auto_delete, true))
+            when Array
+              options = options.merge(:auto_delete => @connection_options.at(0).fetch(:auto_delete, true))
+          end
+
           @channel.queue(funnel, options).status do |messages, consumers|
             info = {
               :messages => messages,
