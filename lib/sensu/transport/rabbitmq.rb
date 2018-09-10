@@ -194,7 +194,7 @@ module Sensu
         if @eligible_options.nil? || @eligible_options.empty?
           @eligible_options = @connection_options.shuffle
         end
-        options = @eligible_options.shift
+        options = @eligible_options.shift || {}
         if options.is_a?(Hash) && options[:host]
           resolve_host(options[:host]) do |ip_address|
             if ip_address.nil?
