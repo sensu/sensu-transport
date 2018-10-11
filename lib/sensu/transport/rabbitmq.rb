@@ -37,12 +37,18 @@ module Sensu
       #
       # @return [TrueClass, FalseClass]
       def connected?
-        @connection && @connection.connected?
+        [@publisher_connection, @consumer_connection].all? do |connection|
+          connection && connection.connected?
+        end
       end
 
       # Close the RabbitMQ connection.
       def close
-        callback = Proc.new { @connection.close }
+        callback = Proc.new do
+          [@publisher_connection, @consumer_connection].each do |connection|
+            connection && connection.close
+          end
+        end
         connected? ? callback.call : EM.next_tick(callback)
       end
 
@@ -60,7 +66,7 @@ module Sensu
       def publish(type, pipe, message, options={})
         if connected?
           catch_errors do
-            @channel.method(type.to_sym).call(pipe, options).publish(message) do
+            @publisher_channel.method(type.to_sym).call(pipe, options).publish(message) do
               info = {}
               yield(info) if block_given?
             end
@@ -85,9 +91,9 @@ module Sensu
       def subscribe(type, pipe, funnel="", options={}, &callback)
         catch_errors do
           previously_declared = @queues.has_key?(funnel)
-          @queues[funnel] ||= @channel.queue!(funnel, :auto_delete => true)
+          @queues[funnel] ||= @consumer_channel.queue!(funnel, :auto_delete => true)
           queue = @queues[funnel]
-          queue.bind(@channel.method(type.to_sym).call(pipe))
+          queue.bind(@consumer_channel.method(type.to_sym).call(pipe))
           unless previously_declared
             queue.subscribe(options, &callback)
           end
@@ -110,7 +116,7 @@ module Sensu
             end
           end
           @queues = {}
-          @channel.recover if connected?
+          @consumer_channel.recover if connected?
         end
         super
       end
@@ -139,7 +145,7 @@ module Sensu
       def stats(funnel, options={})
         catch_errors do
           options = options.merge(:auto_delete => true)
-          @channel.queue(funnel, options).status do |messages, consumers|
+          @consumer_channel.queue(funnel, options).status do |messages, consumers|
             info = {
               :messages => messages,
               :consumers => consumers
@@ -169,7 +175,9 @@ module Sensu
       def reset
         @queues = {}
         @connection_timeout.cancel if @connection_timeout
-        @connection.close_connection if @connection
+        [@publisher_connection, @consumer_connection].each do |connection|
+          connection && connection.close_connection
+        end
       end
 
       def set_connection_options(options)
@@ -186,7 +194,7 @@ module Sensu
         if @eligible_options.nil? || @eligible_options.empty?
           @eligible_options = @connection_options.shuffle
         end
-        options = @eligible_options.shift
+        options = @eligible_options.shift || {}
         if options.is_a?(Hash) && options[:host]
           resolve_host(options[:host]) do |ip_address|
             if ip_address.nil?
@@ -200,7 +208,17 @@ module Sensu
         end
       end
 
-      def setup_connection(options={})
+      def connection_ready(&callback)
+        if connected?
+          @connection_timeout.cancel
+          succeed
+          callback.call if callback
+        end
+      end
+
+      # @param options [Hash]
+      # @return [Object] RabbitMQ connection.
+      def setup_connection(options={}, &callback)
         reconnect_callback = Proc.new { reconnect }
         on_possible_auth_failure = Proc.new {
           @logger.warn("transport connection error", {
@@ -209,34 +227,36 @@ module Sensu
           })
           reconnect
         }
-        @connection = AMQP.connect(options, {
+        connection = AMQP.connect(options, {
           :on_tcp_connection_failure => reconnect_callback,
           :on_possible_authentication_failure => on_possible_auth_failure
         })
-        @connection.logger = @logger
-        @connection.on_open do
+        connection.logger = @logger
+        connection.on_open do
           @logger.debug("transport connection open")
-          @connection_timeout.cancel
-          succeed
-          yield if block_given?
+          connection_ready(&callback)
         end
-        @connection.on_tcp_connection_loss do
+        connection.on_tcp_connection_loss do
           @logger.warn("transport connection error", :reason => "tcp connection lost")
           reconnect
         end
-        @connection.on_skipped_heartbeats do
+        connection.on_skipped_heartbeats do
           @logger.warn("transport connection error", :reason => "skipped heartbeats")
           reconnect
         end
-        @connection.on_closed do
+        connection.on_closed do
           @logger.debug("transport connection closed")
         end
+        connection
       end
 
-      def setup_channel(options={})
-        @channel = AMQP::Channel.new(@connection)
-        @channel.auto_recovery = true
-        @channel.on_error do |channel, channel_close|
+      # @param options [Hash]
+      # @param connection [Object] RabbitMQ connection.
+      # @return [Object] RabbitMQ connection channel.
+      def setup_channel(options={}, connection)
+        channel = AMQP::Channel.new(connection)
+        channel.auto_recovery = true
+        channel.on_error do |channel, channel_close|
           error = Error.new("rabbitmq channel error")
           @on_error.call(error)
         end
@@ -244,13 +264,16 @@ module Sensu
         if options.is_a?(Hash)
           prefetch = options.fetch(:prefetch, 1)
         end
-        @channel.prefetch(prefetch)
+        channel.prefetch(prefetch)
+        channel
       end
 
       def connect_with_eligible_options(&callback)
         next_connection_options do |options|
-          setup_connection(options, &callback)
-          setup_channel(options)
+          @publisher_connection = setup_connection(options, &callback)
+          @publisher_channel = setup_channel(options, @publisher_connection)
+          @consumer_connection = setup_connection(options, &callback)
+          @consumer_channel = setup_channel(options, @consumer_connection)
         end
       end
 
