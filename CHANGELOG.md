@@ -1,5 +1,19 @@
 # Change Log
 
+## [Unreleased](https://github.com/sensu/sensu-transport/tree/HEAD)
+
+[Full Changelog](https://github.com/sensu/sensu-transport/compare/v7.1.0...HEAD)
+
+**Closed issues:**
+
+- RabbitMQ use a separate connection for publish and subscribe [\#61](https://github.com/sensu/sensu-transport/issues/61)
+- Feature request: Amazon MQ support [\#59](https://github.com/sensu/sensu-transport/issues/59)
+- Buildup of RabbitMQ exchanges [\#53](https://github.com/sensu/sensu-transport/issues/53)
+
+**Merged pull requests:**
+
+- Use separate RabbitMQ connections for publish and subscribe [\#62](https://github.com/sensu/sensu-transport/pull/62) ([portertech](https://github.com/portertech))
+
 ## [v7.1.0](https://github.com/sensu/sensu-transport/tree/v7.1.0) (2018-03-09)
 [Full Changelog](https://github.com/sensu/sensu-transport/compare/v7.0.3...v7.1.0)
 

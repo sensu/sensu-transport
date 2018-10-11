@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "sensu-transport"
-  spec.version       = "7.1.0"
+  spec.version       = "8.0.0"
   spec.authors       = ["Sean Porter"]
   spec.email         = ["portertech@gmail.com", "engineering@sensu.io"]
   spec.summary       = "The Sensu transport abstraction library"
