@@ -2,7 +2,14 @@
 
 ## [Unreleased](https://github.com/sensu/sensu-transport/tree/HEAD)
 
-[Full Changelog](https://github.com/sensu/sensu-transport/compare/v7.1.0...HEAD)
+[Full Changelog](https://github.com/sensu/sensu-transport/compare/v8.0.0...HEAD)
+
+**Merged pull requests:**
+
+- Improve flow control connection/channel separatation [\#64](https://github.com/sensu/sensu-transport/pull/64) ([portertech](https://github.com/portertech))
+
+## [v8.0.0](https://github.com/sensu/sensu-transport/tree/v8.0.0) (2018-10-11)
+[Full Changelog](https://github.com/sensu/sensu-transport/compare/v7.1.0...v8.0.0)
 
 **Closed issues:**
 
