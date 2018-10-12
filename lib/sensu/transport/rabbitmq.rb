@@ -37,22 +37,24 @@ module Sensu
       #
       # @return [TrueClass, FalseClass]
       def connected?
-        [@publisher_connection, @consumer_connection].all? do |connection|
+        [@primary_connection, @secondary_connection].all? do |connection|
           connection && connection.connected?
         end
       end
 
-      # Close the RabbitMQ connection.
+      # Close the RabbitMQ connections.
       def close
         callback = Proc.new do
-          [@publisher_connection, @consumer_connection].each do |connection|
+          [@primary_connection, @secondary_connection].each do |connection|
             connection && connection.close
           end
         end
         connected? ? callback.call : EM.next_tick(callback)
       end
 
-      # Publish a message to RabbitMQ.
+      # Publish a message to RabbitMQ. This method will only use the
+      # primary channel for publishing keepalive, otherwise it will
+      # use the secondary channel.
       #
       # @param type [Symbol] the RabbitMQ exchange type, possible
       #   values are: :direct and :fanout.
@@ -66,7 +68,8 @@ module Sensu
       def publish(type, pipe, message, options={})
         if connected?
           catch_errors do
-            @publisher_channel.method(type.to_sym).call(pipe, options).publish(message) do
+            channel = (pipe == "keepalives" ? @primary_channel : @secondary_channel)
+            channel.method(type.to_sym).call(pipe, options).publish(message) do
               info = {}
               yield(info) if block_given?
             end
@@ -91,9 +94,9 @@ module Sensu
       def subscribe(type, pipe, funnel="", options={}, &callback)
         catch_errors do
           previously_declared = @queues.has_key?(funnel)
-          @queues[funnel] ||= @consumer_channel.queue!(funnel, :auto_delete => true)
+          @queues[funnel] ||= @primary_channel.queue!(funnel, :auto_delete => true)
           queue = @queues[funnel]
-          queue.bind(@consumer_channel.method(type.to_sym).call(pipe))
+          queue.bind(@primary_channel.method(type.to_sym).call(pipe))
           unless previously_declared
             queue.subscribe(options, &callback)
           end
@@ -116,7 +119,7 @@ module Sensu
             end
           end
           @queues = {}
-          @consumer_channel.recover if connected?
+          @primary_channel.recover if connected?
         end
         super
       end
@@ -145,7 +148,7 @@ module Sensu
       def stats(funnel, options={})
         catch_errors do
           options = options.merge(:auto_delete => true)
-          @consumer_channel.queue(funnel, options).status do |messages, consumers|
+          @primary_channel.queue(funnel, options).status do |messages, consumers|
             info = {
               :messages => messages,
               :consumers => consumers
@@ -175,7 +178,7 @@ module Sensu
       def reset
         @queues = {}
         @connection_timeout.cancel if @connection_timeout
-        [@publisher_connection, @consumer_connection].each do |connection|
+        [@primary_connection, @secondary_connection].each do |connection|
           connection && connection.close_connection
         end
       end
@@ -208,8 +211,12 @@ module Sensu
         end
       end
 
-      def connection_ready(&callback)
-        if connected?
+      def channels_ready?(&callback)
+        ready = [@primary_channel, @secondary_channel].all? do |channel|
+          channel && channel.status == :opened
+        end
+        if ready
+          @logger.debug("transport connection ready")
           @connection_timeout.cancel
           succeed
           callback.call if callback
@@ -234,7 +241,6 @@ module Sensu
         connection.logger = @logger
         connection.on_open do
           @logger.debug("transport connection open")
-          connection_ready(&callback)
         end
         connection.on_tcp_connection_loss do
           @logger.warn("transport connection error", :reason => "tcp connection lost")
@@ -265,15 +271,18 @@ module Sensu
           prefetch = options.fetch(:prefetch, 1)
         end
         channel.prefetch(prefetch)
+        channel.once_open do
+          channels_ready?(&callback)
+        end
         channel
       end
 
       def connect_with_eligible_options(&callback)
         next_connection_options do |options|
-          @publisher_connection = setup_connection(options, &callback)
-          @publisher_channel = setup_channel(options, @publisher_connection)
-          @consumer_connection = setup_connection(options, &callback)
-          @consumer_channel = setup_channel(options, @consumer_connection)
+          @primary_connection = setup_connection(options, &callback)
+          @primary_channel = setup_channel(options, @primary_connection)
+          @secondary_connection = setup_connection(options, &callback)
+          @secondary_channel = setup_channel(options, @secondary_connection)
         end
       end
 
