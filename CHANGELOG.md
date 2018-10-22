@@ -2,7 +2,17 @@
 
 ## [Unreleased](https://github.com/sensu/sensu-transport/tree/HEAD)
 
-[Full Changelog](https://github.com/sensu/sensu-transport/compare/v8.0.0...HEAD)
+[Full Changelog](https://github.com/sensu/sensu-transport/compare/v8.2.0...HEAD)
+
+## [v8.2.0](https://github.com/sensu/sensu-transport/tree/v8.2.0) (2018-10-22)
+[Full Changelog](https://github.com/sensu/sensu-transport/compare/v8.1.0...v8.2.0)
+
+**Merged pull requests:**
+
+- Revert to calling callback when connection ready, not channel [\#64](https://github.com/sensu/sensu-transport/pull/66) ([amdprophet](https://github.com/amdprophet))
+
+## [v8.1.0](https://github.com/sensu/sensu-transport/tree/v8.1.0) (2018-10-12)
+[Full Changelog](https://github.com/sensu/sensu-transport/compare/v8.0.0...v8.1.0)
 
 **Merged pull requests:**
 
