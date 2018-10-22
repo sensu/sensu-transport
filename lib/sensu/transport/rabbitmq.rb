@@ -211,12 +211,8 @@ module Sensu
         end
       end
 
-      def channels_ready?(&callback)
-        ready = [@primary_channel, @secondary_channel].all? do |channel|
-          channel && channel.status == :opened
-        end
-        if ready
-          @logger.debug("transport connection ready")
+      def connection_ready(&callback)
+        if connected?
           @connection_timeout.cancel
           succeed
           callback.call if callback
@@ -241,6 +237,7 @@ module Sensu
         connection.logger = @logger
         connection.on_open do
           @logger.debug("transport connection open")
+          connection_ready(&callback)
         end
         connection.on_tcp_connection_loss do
           @logger.warn("transport connection error", :reason => "tcp connection lost")
@@ -271,9 +268,6 @@ module Sensu
           prefetch = options.fetch(:prefetch, 1)
         end
         channel.prefetch(prefetch)
-        channel.once_open do
-          channels_ready?(&callback)
-        end
         channel
       end
 
