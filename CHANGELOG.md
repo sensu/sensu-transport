@@ -2,7 +2,14 @@
 
 ## [Unreleased](https://github.com/sensu/sensu-transport/tree/HEAD)
 
-[Full Changelog](https://github.com/sensu/sensu-transport/compare/v8.2.0...HEAD)
+[Full Changelog](https://github.com/sensu/sensu-transport/compare/v8.3.0...HEAD)
+
+## [v8.2.0](https://github.com/sensu/sensu-transport/tree/v8.2.0) (2019-07-05)
+[Full Changelog](https://github.com/sensu/sensu-transport/compare/v8.2.0...v8.3.0)
+
+**Merged pull requests:**
+
+- Reconnect on publish error [\#67](https://github.com/sensu/sensu-transport/pull/67) ([amdprophet](https://github.com/amdprophet))
 
 ## [v8.2.0](https://github.com/sensu/sensu-transport/tree/v8.2.0) (2018-10-22)
 [Full Changelog](https://github.com/sensu/sensu-transport/compare/v8.1.0...v8.2.0)
