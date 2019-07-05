@@ -75,7 +75,8 @@ module Sensu
             end
           end
         else
-          info = {:error => "Transport is not connected"}
+          info = {:error => "Transport is not connected, triggering reconnect"}
+          reconnect
           yield(info) if block_given?
         end
       end
