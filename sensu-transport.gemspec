@@ -18,6 +18,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency("eventmachine")
   spec.add_dependency("amq-protocol", "2.0.1")
   spec.add_dependency("amqp", "1.6.0")
+  spec.add_dependency("nats", "0.8.2")
   spec.add_dependency("sensu-redis", ">= 1.0.0")
 
   spec.add_development_dependency "bundler", "~> 1.6"
